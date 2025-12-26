@@ -6,10 +6,19 @@ import { DUMMY_RACKS } from "@/constants/dummyData.js";
 
 const index = () => {
   const [expandedRack, setExpandedRack] = useState(null);
+  const [selectedLine, setSelectedLine] = useState("All");
 
   const toggleRack = (rackNumber) => {
     setExpandedRack(expandedRack === rackNumber ? null : rackNumber);
   };
+
+  // Filter racks based on selected line
+  const filteredRacks =
+    selectedLine === "All"
+      ? DUMMY_RACKS
+      : DUMMY_RACKS.filter((rack) => rack.location === selectedLine);
+
+  const lines = ["All", "Frz. Line", "SUS Line", "Choc Line"];
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
@@ -27,8 +36,57 @@ const index = () => {
         Rack Overview
       </Text>
 
+      {/* Radio Buttons */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-around",
+          marginBottom: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        {lines.map((line) => (
+          <Pressable
+            key={line}
+            onPress={() => setSelectedLine(line)}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              padding: 6,
+              marginBottom: 6,
+            }}
+          >
+            <View
+              style={{
+                height: 20,
+                width: 20,
+                borderRadius: 10,
+                borderWidth: 2,
+                borderColor: COLORS.primary,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 6,
+              }}
+            >
+              {selectedLine === line && (
+                <View
+                  style={{
+                    height: 10,
+                    width: 10,
+                    borderRadius: 5,
+                    backgroundColor: COLORS.primary,
+                  }}
+                />
+              )}
+            </View>
+            <Text style={{ color: COLORS.text }}>{line}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Racks List */}
       <FlatList
-        data={DUMMY_RACKS}
+        data={filteredRacks}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View
@@ -77,7 +135,6 @@ const index = () => {
                     }}
                   >
                     <View style={{ flexDirection: "row", gap: 8 }}>
-                      {/* Shelf Header */}
                       <Text
                         style={{
                           fontWeight: "600",
@@ -95,7 +152,6 @@ const index = () => {
                       </Text>
                     </View>
 
-                    {/* Items */}
                     {shelf.items.map((item) => (
                       <View
                         key={item._id}
