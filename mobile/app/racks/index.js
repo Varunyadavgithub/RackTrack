@@ -1,6 +1,7 @@
 import { View, Text, FlatList, Pressable } from "react-native";
 import { useState } from "react";
 import { COLORS } from "@/constants/colors.js";
+import AppHeader from "../../components/ui/AppHeader";
 
 const DUMMY_RACKS = [
   {
@@ -29,12 +30,15 @@ export default function RackOverview() {
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
+      <AppHeader title="Back to Home" />
+
       <Text
         style={{
           fontSize: 22,
           fontWeight: "bold",
           color: COLORS.text,
-          marginBottom: 12,
+          textAlign: "center",
+          marginVertical: 10,
         }}
       >
         Rack Overview
