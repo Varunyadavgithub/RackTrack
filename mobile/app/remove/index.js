@@ -23,7 +23,7 @@ const index = () => {
           marginVertical: 10,
         }}
       >
-        Remove New Items
+        Remove Items
       </Text>
       <InputField
         placeholder="Rack Number"
@@ -41,7 +41,7 @@ const index = () => {
         onChangeText={setSapCode}
       />
       <InputField placeholder="Quantity" value={qty} onChangeText={setQty} />
-      <PrimaryButton title="Remove Item" onPress={() => {}} />
+      <PrimaryButton title="Remove" onPress={() => {}} />
     </View>
   );
 };

@@ -41,7 +41,7 @@ const index = () => {
         onChangeText={setSapCode}
       />
       <InputField placeholder="Quantity" value={qty} onChangeText={setQty} />
-      <PrimaryButton title="Save Item" onPress={() => {}} />
+      <PrimaryButton title="Save" onPress={() => {}} />
     </View>
   );
 };
