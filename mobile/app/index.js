@@ -29,6 +29,7 @@ export default function Index() {
         onPress={() => router.push("/search")}
       />
       <PrimaryButton title="Add Items" onPress={() => router.push("/add")} />
+              <PrimaryButton title="Remove Items" onPress={() => router.push("/remove")} />
       <PrimaryButton
         title="Rack Overview"
         onPress={() => router.push("/racks")}
