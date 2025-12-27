@@ -1,24 +1,54 @@
-import { View, Text, FlatList, Pressable } from "react-native";
-import { useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
+import { useEffect, useState, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { COLORS } from "@/constants/colors.js";
 import AppHeader from "../../components/ui/AppHeader";
-import { DUMMY_RACKS } from "@/constants/dummyData.js";
+import { fetchRacks } from "@/store/racks/rackThunks";
 
 const index = () => {
+  const dispatch = useDispatch();
+
+  const { list: racks, loading, error } = useSelector((state) => state.racks);
+
   const [expandedRack, setExpandedRack] = useState(null);
   const [selectedLine, setSelectedLine] = useState("All");
+
+  useEffect(() => {
+    dispatch(fetchRacks());
+  }, []);
 
   const toggleRack = (rackNumber) => {
     setExpandedRack(expandedRack === rackNumber ? null : rackNumber);
   };
 
-  // Filter racks based on selected line
-  const filteredRacks =
-    selectedLine === "All"
-      ? DUMMY_RACKS
-      : DUMMY_RACKS.filter((rack) => rack.location === selectedLine);
-
   const lines = ["All", "Frz. Line", "SUS Line", "Choc Line"];
+
+  const filteredRacks = useMemo(() => {
+    if (selectedLine === "All") return racks;
+    return racks.filter((rack) => rack.location === selectedLine);
+  }, [racks, selectedLine]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ color: "red" }}>{error}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
@@ -36,7 +66,7 @@ const index = () => {
         Rack Overview
       </Text>
 
-      {/* Radio Buttons */}
+      {/* Line Filters */}
       <View
         style={{
           flexDirection: "row",
@@ -84,10 +114,15 @@ const index = () => {
         ))}
       </View>
 
-      {/* Racks List */}
+      {/* Racks */}
       <FlatList
         data={filteredRacks}
         keyExtractor={(item) => item._id}
+        ListEmptyComponent={
+          <Text style={{ textAlign: "center", color: COLORS.textLight }}>
+            No racks found
+          </Text>
+        }
         renderItem={({ item }) => (
           <View
             style={{
@@ -139,15 +174,12 @@ const index = () => {
                         style={{
                           fontWeight: "600",
                           color: COLORS.text,
-                          marginBottom: 4,
                         }}
                       >
                         Shelf {shelf.shelfNumber}
                       </Text>
 
-                      <Text
-                        style={{ color: COLORS.textLight, marginBottom: 6 }}
-                      >
+                      <Text style={{ color: COLORS.textLight }}>
                         Total Items: {shelf.items.length}
                       </Text>
                     </View>
@@ -157,7 +189,7 @@ const index = () => {
                         key={item._id}
                         style={{
                           padding: 8,
-                          marginBottom: 6,
+                          marginTop: 6,
                           borderRadius: 6,
                           backgroundColor: COLORS.card,
                         }}
@@ -174,11 +206,11 @@ const index = () => {
                           Quantity: {item.quantity}
                         </Text>
 
-                        {item.description ? (
+                        {item.description && (
                           <Text style={{ color: COLORS.textLight }}>
                             {item.description}
                           </Text>
-                        ) : null}
+                        )}
 
                         <Text
                           style={{
