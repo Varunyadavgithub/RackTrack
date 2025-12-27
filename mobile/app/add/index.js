@@ -9,7 +9,10 @@ const index = () => {
   const [rack, setRack] = useState("");
   const [shelf, setShelf] = useState("");
   const [sapCode, setSapCode] = useState("");
+  const [itemName, setItemName] = useState("");
+  const [description, setDescription] = useState("");
   const [qty, setQty] = useState("");
+  
   return (
     <View style={{ flex: 1, padding: 20 }}>
       <AppHeader title="Back to Home" />
@@ -40,6 +43,17 @@ const index = () => {
         value={sapCode}
         onChangeText={setSapCode}
       />
+      <InputField
+        placeholder="Item Name"
+        value={itemName}
+        onChangeText={setItemName}
+      />
+      <InputField
+        placeholder="Description"
+        value={description}
+        onChangeText={setDescription}
+      />
+
       <InputField placeholder="Quantity" value={qty} onChangeText={setQty} />
       <PrimaryButton title="Save" onPress={() => {}} />
     </View>
