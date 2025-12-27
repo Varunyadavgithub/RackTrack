@@ -1,8 +1,18 @@
 import express from "express";
-import { getRacks } from "../controllers/rack.controller.js";
+import {
+  createRack,
+  getAllRacks,
+  getRackById,
+  updateRack,
+  deleteRack,
+} from "../controllers/rack.controller.js";
 
 const router = express.Router();
 
-router.get("/", getRacks);
+router.post("/", createRack);
+router.get("/", getAllRacks);
+router.get("/:id", getRackById);
+router.put("/:id", updateRack);
+router.delete("/:id", deleteRack);
 
 export default router;

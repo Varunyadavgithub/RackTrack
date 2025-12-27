@@ -4,7 +4,7 @@ import itemRoutes from "./item.routes.js";
 
 const app = express();
 
-app.use("/racks", rackRoutes);
-app.use("/items", itemRoutes);
+app.use("/rack", rackRoutes);
+app.use("/item", itemRoutes);
 
 export default app;

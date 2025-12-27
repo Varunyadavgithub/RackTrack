@@ -1,31 +1,58 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
--- Racks
+-- =========================
+-- RACKS TABLE
+-- =========================
 CREATE TABLE racks (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  rack_number VARCHAR(50) UNIQUE NOT NULL,
-  location TEXT,
-  area TEXT,
-  capacity TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
+    rack_id VARCHAR(10) PRIMARY KEY,
+    rack_number VARCHAR(20) NOT NULL,
+    location VARCHAR(100),
+    area VARCHAR(100),
+    capacity_kg INTEGER CHECK (capacity_kg >= 0),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Shelves
+-- =========================
+-- SHELVES TABLE
+-- =========================
 CREATE TABLE shelves (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  shelf_number VARCHAR(50) NOT NULL,
-  rack_id UUID REFERENCES racks(id) ON DELETE CASCADE
+    shelf_id VARCHAR(10) PRIMARY KEY,
+    rack_id VARCHAR(10) NOT NULL,
+    shelf_number VARCHAR(10) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_shelf_rack
+        FOREIGN KEY (rack_id)
+        REFERENCES racks (rack_id)
+        ON DELETE CASCADE
 );
 
--- Items
+-- =========================
+-- ITEMS TABLE
+-- =========================
 CREATE TABLE items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  sap_code VARCHAR(100) NOT NULL,
-  item_name TEXT NOT NULL,
-  description TEXT,
-  quantity INT NOT NULL,
-  rack_id UUID REFERENCES racks(id),
-  shelf_id UUID REFERENCES shelves(id),
-  last_updated TIMESTAMP DEFAULT NOW(),
-  UNIQUE (sap_code, rack_id, shelf_id)
+    item_id VARCHAR(10) PRIMARY KEY,
+    sap_code VARCHAR(30) NOT NULL,
+    item_name VARCHAR(150) NOT NULL,
+    description TEXT,
+    quantity INTEGER NOT NULL CHECK (quantity >= 0),
+    rack_id VARCHAR(10) NOT NULL,
+    shelf_id VARCHAR(10) NOT NULL,
+    last_updated TIMESTAMP NOT NULL,
+
+    CONSTRAINT fk_item_rack
+        FOREIGN KEY (rack_id)
+        REFERENCES racks (rack_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_item_shelf
+        FOREIGN KEY (shelf_id)
+        REFERENCES shelves (shelf_id)
+        ON DELETE CASCADE
 );
+
+-- =========================
+-- INDEXES (Performance)
+-- =========================
+CREATE INDEX idx_shelves_rack_id ON shelves (rack_id);
+CREATE INDEX idx_items_rack_id ON items (rack_id);
+CREATE INDEX idx_items_shelf_id ON items (shelf_id);
+CREATE INDEX idx_items_sap_code ON items (sap_code);
