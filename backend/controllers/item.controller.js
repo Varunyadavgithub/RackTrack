@@ -225,12 +225,10 @@ export const updateItem = async (req, res) => {
     res.json(item);
   } catch (err) {
     if (err.code === "23505") {
-      return res
-        .status(409)
-        .json({
-          message:
-            "Item with this SAP code already exists on the same rack/shelf",
-        });
+      return res.status(409).json({
+        message:
+          "Item with this SAP code already exists on the same rack/shelf",
+      });
     }
     res.status(500).json({ error: err.message });
   }

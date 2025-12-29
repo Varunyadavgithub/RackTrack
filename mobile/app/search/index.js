@@ -1,49 +1,76 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { COLORS } from "@/constants/colors.js";
 import InputField from "@/components/ui/InputField";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import AppHeader from "../../components/ui/AppHeader";
-import {DUMMY_RACKS} from "@/constants/dummyData.js";
+import { searchItem } from "../redux/api/itemThunks.js";
 
-const index = () => {
+const Index = () => {
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.items);
+
   const [rack, setRack] = useState("");
   const [shelf, setShelf] = useState("");
   const [sapCode, setSapCode] = useState("");
   const [result, setResult] = useState(null);
 
-  // Function to search item
-  const searchItem = ({ rackNumber, shelfNumber, sapCode }) => {
-    if (sapCode) {
-      // Search by SAP Code
-      for (let rack of DUMMY_RACKS) {
-        for (let shelf of rack.shelves) {
-          const found = shelf.items.find(
-            (item) => item.sapCode.toLowerCase() === sapCode.toLowerCase()
-          );
-          if (found) return found;
-        }
-      }
-    } else if (rackNumber && shelfNumber) {
-      // Search by Rack + Shelf
-      const rackFound = DUMMY_RACKS.find(
-        (r) => r.rackNumber.toLowerCase() === rackNumber.toLowerCase()
-      );
-      if (rackFound) {
-        const shelfFound = rackFound.shelves.find(
-          (s) => s.shelfNumber.toLowerCase() === shelfNumber.toLowerCase()
-        );
-        if (shelfFound) return shelfFound.items;
-      }
+  const handleSearch = async () => {
+    setResult(null);
+
+    // Build query string
+    let query = "";
+    if (sapCode) query = `sap=${sapCode}`;
+    else if (rack && shelf) query = `rack=${rack}&shelf=${shelf}`;
+    else {
+      setResult("NOT_FOUND");
+      return;
     }
 
-    return null; // Not found
+    try {
+      const response = await dispatch(searchItem(query)).unwrap();
+      if (!response || (Array.isArray(response) && response.length === 0)) {
+        setResult("NOT_FOUND");
+      } else {
+        setResult(response);
+      }
+    } catch (err) {
+      console.log("Search API error:", err);
+      setResult("NOT_FOUND");
+    }
   };
 
-  const handleSearch = () => {
-    const found = searchItem({ rackNumber: rack, shelfNumber: shelf, sapCode });
-    setResult(found || "NOT_FOUND");
-  };
+  // Helper to render a single item
+  const renderItem = (item) => (
+    <View
+      key={item.item_id}
+      style={{
+        marginBottom: 12,
+        padding: 10,
+        borderRadius: 6,
+        backgroundColor: COLORS.card,
+      }}
+    >
+      <Text style={{ fontWeight: "600", color: COLORS.text }}>
+        {item.item_name}
+      </Text>
+      <Text style={{ color: COLORS.textLight }}>SAP Code: {item.sap_code}</Text>
+      <Text style={{ color: COLORS.textLight }}>Quantity: {item.quantity}</Text>
+      {item.description && (
+        <Text style={{ color: COLORS.textLight }}>{item.description}</Text>
+      )}
+      <Text
+        style={{
+          fontSize: 12,
+          color: COLORS.textLight,
+          marginTop: 2,
+        }}
+      >
+        Rack: {item.rack_number} | Shelf: {item.shelf_number}
+      </Text>
+    </View>
+  );
 
   return (
     <ScrollView style={{ flex: 1, padding: 20 }}>
@@ -76,7 +103,19 @@ const index = () => {
         onChangeText={setSapCode}
       />
 
-      <PrimaryButton title="Search" onPress={handleSearch} />
+      <PrimaryButton
+        title={loading ? "Searching..." : "Search"}
+        onPress={handleSearch}
+        disabled={loading}
+      />
+
+      {loading && (
+        <ActivityIndicator
+          size="large"
+          color={COLORS.primary}
+          style={{ marginTop: 20 }}
+        />
+      )}
 
       {/* Result Display */}
       {result && (
@@ -93,68 +132,16 @@ const index = () => {
               Item not found
             </Text>
           ) : Array.isArray(result) ? (
-            result.map((item) => (
-              <View
-                key={item._id}
-                style={{
-                  marginBottom: 12,
-                  padding: 10,
-                  borderRadius: 6,
-                  backgroundColor: COLORS.card,
-                }}
-              >
-                <Text style={{ fontWeight: "600", color: COLORS.text }}>
-                  {item.itemName}
-                </Text>
-                <Text style={{ color: COLORS.textLight }}>
-                  SAP Code: {item.sapCode}
-                </Text>
-                <Text style={{ color: COLORS.textLight }}>
-                  Quantity: {item.quantity}
-                </Text>
-                {item.description ? (
-                  <Text style={{ color: COLORS.textLight }}>
-                    {item.description}
-                  </Text>
-                ) : null}
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: COLORS.textLight,
-                    marginTop: 2,
-                  }}
-                >
-                  Rack: {item.rackId} | Shelf: {item.shelfId}
-                </Text>
-              </View>
-            ))
+            result.map((item) => renderItem(item))
           ) : (
-            <View>
-              <Text style={{ fontWeight: "600", color: COLORS.text }}>
-                {result.itemName}
-              </Text>
-              <Text style={{ color: COLORS.textLight }}>
-                SAP Code: {result.sapCode}
-              </Text>
-              <Text style={{ color: COLORS.textLight }}>
-                Quantity: {result.quantity}
-              </Text>
-              {result.description && (
-                <Text style={{ color: COLORS.textLight }}>
-                  {result.description}
-                </Text>
-              )}
-              <Text
-                style={{ fontSize: 12, color: COLORS.textLight, marginTop: 2 }}
-              >
-                Rack: {result.rackId} | Shelf: {result.shelfId}
-              </Text>
-            </View>
+            renderItem(result)
           )}
         </View>
       )}
+
+      {error && <Text style={{ color: "red", marginTop: 10 }}>{error}</Text>}
     </ScrollView>
   );
 };
 
-export default index;
+export default Index;

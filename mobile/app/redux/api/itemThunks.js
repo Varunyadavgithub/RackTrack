@@ -2,7 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { apiClient } from "./apiClient.js";
 
 // Add Item
-export const addItem = createAsyncThunk("items/add", async (data, thunkAPI) => {
+export const addItem = createAsyncThunk("item/add", async (data, thunkAPI) => {
   try {
     return await apiClient("/items", {
       method: "POST",
@@ -18,8 +18,10 @@ export const searchItem = createAsyncThunk(
   "items/search",
   async (query, thunkAPI) => {
     try {
-      return await apiClient(`/items/serach?${query}`);
+      const response = await apiClient(`/item/search?${query}`);
+      return response;
     } catch (error) {
+      console.log("API error:", error);
       return thunkAPI.rejectWithValue(error.message);
     }
   }
@@ -30,7 +32,7 @@ export const updateItem = createAsyncThunk(
   "items/update",
   async ({ id, data }, thunkAPI) => {
     try {
-      return await apiClient(`/items/${id}`, {
+      return await apiClient(`/item/${id}`, {
         method: "PUT",
         body: JSON.stringify(data),
       });
@@ -45,7 +47,7 @@ export const deletetem = createAsyncThunk(
   "items/delete",
   async (id, thunkAPI) => {
     try {
-      await apiClient(`/items/${id}`, {
+      await apiClient(`/item/${id}`, {
         method: "DELETE",
       });
       return id;

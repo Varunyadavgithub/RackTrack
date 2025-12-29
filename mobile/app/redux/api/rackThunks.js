@@ -7,7 +7,6 @@ export const fetchRacks = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const response = await apiClient("/rack");
-      console.log("API response:", response);
       return response;
     } catch (error) {
       console.log("API error:", error);
@@ -15,7 +14,6 @@ export const fetchRacks = createAsyncThunk(
     }
   }
 );
-
 
 // Get rack by ID
 export const fetchRackById = createAsyncThunk(

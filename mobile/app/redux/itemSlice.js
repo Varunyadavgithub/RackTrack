@@ -17,6 +17,7 @@ const itemSlice = createSlice({
     builder
       .addCase(searchItem.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(searchItem.fulfilled, (state, action) => {
         state.loading = false;
@@ -24,7 +25,7 @@ const itemSlice = createSlice({
       })
       .addCase(searchItem.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload || "Something went wrong";
       })
 
       .addCase(addItem.fulfilled, (state, action) => {
