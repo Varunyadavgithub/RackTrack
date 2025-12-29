@@ -6,19 +6,23 @@ export const fetchRacks = createAsyncThunk(
   "racks/fetchAll",
   async (_, thunkAPI) => {
     try {
-      return await apiClient("/racks");
+      const response = await apiClient("/rack");
+      console.log("API response:", response);
+      return response;
     } catch (error) {
+      console.log("API error:", error);
       return thunkAPI.rejectWithValue(error.message);
     }
   }
 );
 
+
 // Get rack by ID
-export const fetchRackByID = createAsyncThunk(
+export const fetchRackById = createAsyncThunk(
   "racks/fetchById",
   async (id, thunkAPI) => {
     try {
-      return await apiClient(`/racks/${id}`);
+      return await apiClient(`/rack/${id}`);
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
     }
@@ -30,7 +34,7 @@ export const createRack = createAsyncThunk(
   "racks/create",
   async (data, thunkAPI) => {
     try {
-      return await apiClient("/racks", {
+      return await apiClient("/rack", {
         method: "POST",
         body: JSON.stringify(data),
       });

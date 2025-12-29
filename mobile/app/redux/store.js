@@ -1,6 +1,6 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import rackReducer from "./rackSlice.js";
-import itemReducer from "./itemSlice.js";
+// import itemReducer from "./itemSlice.js";
 import {
   persistReducer,
   FLUSH,
@@ -20,7 +20,7 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
   racks: rackReducer,
-  items: itemReducer,
+  // items: itemReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

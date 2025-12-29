@@ -9,25 +9,33 @@ import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS } from "@/constants/colors.js";
 import AppHeader from "../../components/ui/AppHeader";
-import { fetchRacks } from "@/store/racks/rackThunks";
+import { fetchRacks } from "../redux/api/rackThunks.js";
 
-const index = () => {
+const Index = () => {
   const dispatch = useDispatch();
-
   const { list: racks, loading, error } = useSelector((state) => state.racks);
 
   const [expandedRack, setExpandedRack] = useState(null);
+  const [expandedShelf, setExpandedShelf] = useState(null); // <-- Track expanded shelf
   const [selectedLine, setSelectedLine] = useState("All");
 
   useEffect(() => {
     dispatch(fetchRacks());
-  }, []);
+  }, [dispatch]);
 
-  const toggleRack = (rackNumber) => {
-    setExpandedRack(expandedRack === rackNumber ? null : rackNumber);
+  const lines = useMemo(() => {
+    const uniqueLocations = Array.from(new Set(racks.map((r) => r.location)));
+    return ["All", ...uniqueLocations];
+  }, [racks]);
+
+  const toggleRack = (rackId) => {
+    setExpandedRack((prev) => (prev === rackId ? null : rackId));
+    setExpandedShelf(null); // collapse any open shelf when rack changes
   };
 
-  const lines = ["All", "Frz. Line", "SUS Line", "Choc Line"];
+  const toggleShelf = (shelfId) => {
+    setExpandedShelf((prev) => (prev === shelfId ? null : shelfId));
+  };
 
   const filteredRacks = useMemo(() => {
     if (selectedLine === "All") return racks;
@@ -53,7 +61,6 @@ const index = () => {
   return (
     <View style={{ flex: 1, padding: 16 }}>
       <AppHeader title="Back to Home" />
-
       <Text
         style={{
           fontSize: 22,
@@ -123,41 +130,85 @@ const index = () => {
             No racks found
           </Text>
         }
-        renderItem={({ item }) => (
-          <View
-            style={{
-              backgroundColor: COLORS.card,
-              borderRadius: 12,
-              padding: 14,
-              marginBottom: 12,
-              elevation: 3,
-            }}
-          >
-            {/* Rack Header */}
-            <Pressable onPress={() => toggleRack(item.rackNumber)}>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: COLORS.primary,
-                }}
+        renderItem={({ item }) => {
+          const shelfCount = item.shelves.length;
+          const itemCount = item.shelves.reduce(
+            (acc, shelf) => acc + shelf.items.length,
+            0
+          );
+
+          return (
+            <View
+              style={{
+                backgroundColor: COLORS.card,
+                borderRadius: 12,
+                padding: 14,
+                marginBottom: 12,
+                elevation: 3,
+              }}
+            >
+              {/* Rack Header */}
+              <Pressable
+                onPress={() => toggleRack(item._id)}
+                style={{ paddingVertical: 10 }}
               >
-                {item.rackNumber}
-              </Text>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: COLORS.primary,
+                    marginBottom: 8,
+                  }}
+                >
+                  {item.rackNumber}
+                </Text>
 
-              <Text style={{ color: COLORS.textLight }}>
-                Location: {item.location} | Area: {item.area}
-              </Text>
+                {/* Row 1: Location & Area */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    marginBottom: 4,
+                  }}
+                >
+                  <Text style={{ color: COLORS.textLight }}>
+                    <Text style={{ fontWeight: "600" }}>Location: </Text>
+                    {item.location}
+                  </Text>
+                  <Text style={{ color: COLORS.textLight }}>
+                    <Text style={{ fontWeight: "600" }}>Area: </Text>
+                    {item.area}
+                  </Text>
+                </View>
 
-              <Text style={{ color: COLORS.textLight }}>
-                Capacity: {item.capacity}
-              </Text>
-            </Pressable>
+                {/* Row 2: Shelves & Items */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    marginBottom: 4,
+                  }}
+                >
+                  <Text style={{ color: COLORS.textLight }}>
+                    <Text style={{ fontWeight: "600" }}>Shelves: </Text>
+                    {shelfCount}
+                  </Text>
+                  <Text style={{ color: COLORS.textLight }}>
+                    <Text style={{ fontWeight: "600" }}>Items: </Text>
+                    {itemCount}
+                  </Text>
+                </View>
 
-            {/* Shelves */}
-            {expandedRack === item.rackNumber && (
-              <View style={{ marginTop: 12 }}>
-                {item.shelves.map((shelf) => (
+                {/* Row 3: Capacity */}
+                <Text style={{ color: COLORS.textLight }}>
+                  <Text style={{ fontWeight: "600" }}>Capacity: </Text>
+                  {item.capacity} kg
+                </Text>
+              </Pressable>
+
+              {/* Shelves */}
+              {expandedRack === item._id &&
+                item.shelves.map((shelf) => (
                   <View
                     key={shelf._id}
                     style={{
@@ -169,70 +220,70 @@ const index = () => {
                       borderColor: COLORS.border,
                     }}
                   >
-                    <View style={{ flexDirection: "row", gap: 8 }}>
-                      <Text
-                        style={{
-                          fontWeight: "600",
-                          color: COLORS.text,
-                        }}
-                      >
+                    {/* Shelf Header */}
+                    <Pressable
+                      onPress={() => toggleShelf(shelf._id)}
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Text style={{ fontWeight: "600", color: COLORS.text }}>
                         Shelf {shelf.shelfNumber}
                       </Text>
-
                       <Text style={{ color: COLORS.textLight }}>
                         Total Items: {shelf.items.length}
                       </Text>
-                    </View>
+                    </Pressable>
 
-                    {shelf.items.map((item) => (
-                      <View
-                        key={item._id}
-                        style={{
-                          padding: 8,
-                          marginTop: 6,
-                          borderRadius: 6,
-                          backgroundColor: COLORS.card,
-                        }}
-                      >
-                        <Text style={{ fontWeight: "600", color: COLORS.text }}>
-                          {item.itemName}
-                        </Text>
-
-                        <Text style={{ color: COLORS.textLight }}>
-                          SAP Code: {item.sapCode}
-                        </Text>
-
-                        <Text style={{ color: COLORS.textLight }}>
-                          Quantity: {item.quantity}
-                        </Text>
-
-                        {item.description && (
-                          <Text style={{ color: COLORS.textLight }}>
-                            {item.description}
-                          </Text>
-                        )}
-
-                        <Text
+                    {/* Items */}
+                    {expandedShelf === shelf._id &&
+                      shelf.items.map((item) => (
+                        <View
+                          key={item._id}
                           style={{
-                            fontSize: 12,
-                            color: COLORS.textLight,
-                            marginTop: 2,
+                            padding: 8,
+                            marginTop: 6,
+                            borderRadius: 6,
+                            backgroundColor: COLORS.card,
                           }}
                         >
-                          Last Updated:{" "}
-                          {new Date(item.lastUpdated).toLocaleString()}
-                        </Text>
-                      </View>
-                    ))}
+                          <Text
+                            style={{ fontWeight: "600", color: COLORS.text }}
+                          >
+                            {item.itemName}
+                          </Text>
+                          <Text style={{ color: COLORS.textLight }}>
+                            SAP Code: {item.sapCode}
+                          </Text>
+                          <Text style={{ color: COLORS.textLight }}>
+                            Quantity: {item.quantity}
+                          </Text>
+                          {item.description && (
+                            <Text style={{ color: COLORS.textLight }}>
+                              {item.description}
+                            </Text>
+                          )}
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              color: COLORS.textLight,
+                              marginTop: 2,
+                            }}
+                          >
+                            Last Updated:{" "}
+                            {new Date(item.lastUpdated).toLocaleString()}
+                          </Text>
+                        </View>
+                      ))}
                   </View>
                 ))}
-              </View>
-            )}
-          </View>
-        )}
+            </View>
+          );
+        }}
       />
     </View>
   );
 };
 
-export default index;
+export default Index;

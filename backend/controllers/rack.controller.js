@@ -48,21 +48,74 @@ export const createRack = async (req, res) => {
 ====================== */
 export const getAllRacks = async (req, res) => {
   try {
-    const racks = await sql`
+    // Fetch racks with their shelves and items
+    const rows = await sql`
       SELECT
         r.rack_id,
         r.rack_number,
         r.location,
         r.area,
         r.capacity_kg,
-        COUNT(DISTINCT s.shelf_id) AS shelf_count,
-        COUNT(i.item_id) AS item_count
+        s.shelf_id,
+        s.shelf_number,
+        i.item_id,
+        i.sap_code,
+        i.item_name,
+        i.description,
+        i.quantity,
+        i.last_updated
       FROM racks r
       LEFT JOIN shelves s ON s.rack_id = r.rack_id
-      LEFT JOIN items i ON i.rack_id = r.rack_id
-      GROUP BY r.rack_id
-      ORDER BY r.rack_number;
+      LEFT JOIN items i ON i.shelf_id = s.shelf_id
+      ORDER BY r.rack_number, s.shelf_number, i.item_name;
     `;
+
+    // Transform flat rows into nested JSON
+    const racksMap = {};
+
+    rows.forEach((row) => {
+      if (!racksMap[row.rack_id]) {
+        racksMap[row.rack_id] = {
+          _id: row.rack_id,
+          rackNumber: row.rack_number,
+          location: row.location,
+          area: row.area,
+          capacity: row.capacity_kg,
+          shelves: [],
+        };
+      }
+
+      if (row.shelf_id) {
+        let shelf = racksMap[row.rack_id].shelves.find(
+          (s) => s._id === row.shelf_id
+        );
+
+        if (!shelf) {
+          shelf = {
+            _id: row.shelf_id,
+            rackId: row.rack_id,
+            shelfNumber: row.shelf_number,
+            items: [],
+          };
+          racksMap[row.rack_id].shelves.push(shelf);
+        }
+
+        if (row.item_id) {
+          shelf.items.push({
+            _id: row.item_id,
+            sapCode: row.sap_code,
+            itemName: row.item_name,
+            description: row.description,
+            quantity: row.quantity,
+            rackId: row.rack_id,
+            shelfId: row.shelf_id,
+            lastUpdated: row.last_updated,
+          });
+        }
+      }
+    });
+
+    const racks = Object.values(racksMap);
 
     res.json(racks);
   } catch (err) {
@@ -77,38 +130,89 @@ export const getRackById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Fetch rack info
     const rack = (
       await sql`
-      SELECT
-        rack_id,
-        rack_number,
-        location,
-        area,
-        capacity_kg
-      FROM racks
-      WHERE rack_id = ${id}
-    `
+        SELECT
+          rack_id,
+          rack_number,
+          location,
+          area,
+          capacity_kg
+        FROM racks
+        WHERE rack_id = ${id}
+      `
     )[0];
 
     if (!rack) {
       return res.status(404).json({ message: "Rack not found" });
     }
 
+    // Fetch shelves for this rack
     const shelves = await sql`
       SELECT
         s.shelf_id,
-        s.shelf_number,
-        COUNT(i.item_id) AS item_count
+        s.shelf_number
       FROM shelves s
-      LEFT JOIN items i ON i.shelf_id = s.shelf_id
       WHERE s.rack_id = ${id}
-      GROUP BY s.shelf_id
       ORDER BY s.shelf_number;
     `;
 
-    rack.shelves = shelves;
-    res.json(rack);
+    // Fetch items for each shelf
+    for (let shelf of shelves) {
+      const items = await sql`
+        SELECT
+          i.item_id,
+          i.sap_code,
+          i.item_name,
+          i.description,
+          i.quantity,
+          i.rack_id,
+          i.shelf_id,
+          i.last_updated
+        FROM items i
+        WHERE i.shelf_id = ${shelf.shelf_id};
+      `;
+      // Attach items to shelf
+      shelf.items = items.map((item) => ({
+        _id: item.item_id,
+        sapCode: item.sap_code,
+        itemName: item.item_name,
+        description: item.description,
+        quantity: item.quantity,
+        rackId: item.rack_id,
+        shelfId: item.shelf_id,
+        lastUpdated: item.last_updated,
+      }));
+
+      // Rename shelf properties for frontend consistency
+      shelf._id = shelf.shelf_id;
+      shelf.shelfNumber = shelf.shelf_number;
+      delete shelf.shelf_id;
+      delete shelf.shelf_number;
+    }
+
+    // Attach shelves to rack
+    rack.shelves = shelves.map((shelf) => ({
+      _id: shelf._id,
+      shelfNumber: shelf.shelfNumber,
+      items: shelf.items,
+      rackId: rack.rack_id,
+    }));
+
+    // Format rack for frontend consistency
+    const formattedRack = {
+      _id: rack.rack_id,
+      rackNumber: rack.rack_number,
+      location: rack.location,
+      area: rack.area,
+      capacity: rack.capacity_kg,
+      shelves: rack.shelves,
+    };
+
+    res.json(formattedRack);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
