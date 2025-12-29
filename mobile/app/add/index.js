@@ -1,18 +1,54 @@
-import { View, Text } from "react-native";
+import { View, Text, Alert, ActivityIndicator } from "react-native";
 import { COLORS } from "@/constants/colors.js";
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import InputField from "@/components/ui/InputField";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import AppHeader from "../../components/ui/AppHeader";
+import { addItem } from "../redux/api/itemThunks.js";
 
-const index = () => {
+const Index = () => {
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.items);
+
   const [rack, setRack] = useState("");
   const [shelf, setShelf] = useState("");
   const [sapCode, setSapCode] = useState("");
   const [itemName, setItemName] = useState("");
   const [description, setDescription] = useState("");
   const [qty, setQty] = useState("");
-  
+
+  const handleSave = async () => {
+    if (!rack || !shelf || !sapCode || !itemName || !qty) {
+      Alert.alert("Validation Error", "Please fill in all required fields.");
+      return;
+    }
+
+    const newItem = {
+      rackNumber: rack,
+      shelfNumber: shelf,
+      sapCode: sapCode,
+      itemName: itemName,
+      description: description,
+      quantity: Number(qty),
+    };
+
+    try {
+      const response = await dispatch(addItem(newItem)).unwrap();
+      Alert.alert("Success", "Item added successfully!");
+      // Clear inputs after saving
+      setRack("");
+      setShelf("");
+      setSapCode("");
+      setItemName("");
+      setDescription("");
+      setQty("");
+    } catch (err) {
+      console.log("Add item error:", err);
+      Alert.alert("Error", err || "Failed to add item.");
+    }
+  };
+
   return (
     <View style={{ flex: 1, padding: 20 }}>
       <AppHeader title="Back to Home" />
@@ -26,8 +62,9 @@ const index = () => {
           marginVertical: 10,
         }}
       >
-        Add New Items
+        Add New Item
       </Text>
+
       <InputField
         placeholder="Rack Number"
         value={rack}
@@ -53,11 +90,26 @@ const index = () => {
         value={description}
         onChangeText={setDescription}
       />
+      <InputField
+        placeholder="Quantity"
+        value={qty}
+        onChangeText={setQty}
+        keyboardType="numeric"
+      />
 
-      <InputField placeholder="Quantity" value={qty} onChangeText={setQty} />
-      <PrimaryButton title="Save" onPress={() => {}} />
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color={COLORS.primary}
+          style={{ marginTop: 20 }}
+        />
+      ) : (
+        <PrimaryButton title="Save" onPress={handleSave} />
+      )}
+
+      {error && <Text style={{ color: "red", marginTop: 10 }}>{error}</Text>}
     </View>
   );
 };
 
-export default index;
+export default Index;

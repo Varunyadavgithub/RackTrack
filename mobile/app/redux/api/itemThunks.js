@@ -4,7 +4,7 @@ import { apiClient } from "./apiClient.js";
 // Add Item
 export const addItem = createAsyncThunk("item/add", async (data, thunkAPI) => {
   try {
-    return await apiClient("/items", {
+    return await apiClient("/item", {
       method: "POST",
       body: JSON.stringify(data),
     });
