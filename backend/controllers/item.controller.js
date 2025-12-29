@@ -239,27 +239,67 @@ export const updateItem = async (req, res) => {
 ====================== */
 export const removeItem = async (req, res) => {
   try {
-    const { rack, shelf, sap } = req.body;
+    const { rackNumber, shelfNumber, sapCode, quantity } = req.body;
 
-    const query = `
-      DELETE FROM items i
-      USING racks r, shelves s
-      WHERE i.rack_id = r.rack_id
-        AND i.shelf_id = s.shelf_id
-        AND r.rack_number = $1
-        AND s.shelf_number = $2
-        AND i.sap_code = $3
-      RETURNING *;
+    if (!rackNumber || !shelfNumber || !sapCode || !quantity) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // 1️⃣ Get the item first
+    const itemResult = await sql`
+      SELECT 
+        i.item_id,
+        i.quantity
+      FROM items i
+      JOIN racks r ON r.rack_id = i.rack_id
+      JOIN shelves s ON s.shelf_id = i.shelf_id
+      WHERE r.rack_number = ${rackNumber}
+        AND s.shelf_number = ${shelfNumber}
+        AND i.sap_code = ${sapCode}
     `;
 
-    const result = await sql.query(query, [rack, shelf, sap]);
-
-    if (!result.length) {
+    if (itemResult.length === 0) {
       return res.status(404).json({ message: "Item not found" });
     }
 
-    res.json({ message: "Item removed", removedItem: result[0] });
+    const item = itemResult[0];
+
+    // 2️⃣ Validate quantity
+    if (quantity > item.quantity) {
+      return res.status(400).json({
+        message: "Remove quantity exceeds available stock",
+      });
+    }
+
+    // 3️⃣ If removing full quantity → DELETE
+    if (quantity === item.quantity) {
+      const deleted = await sql`
+        DELETE FROM items
+        WHERE item_id = ${item.item_id}
+        RETURNING *
+      `;
+
+      return res.json({
+        message: "Item fully removed",
+        removedItem: deleted[0],
+      });
+    }
+
+    // 4️⃣ Else → UPDATE quantity
+    const updated = await sql`
+      UPDATE items
+      SET quantity = quantity - ${quantity},
+          last_updated = NOW()
+      WHERE item_id = ${item.item_id}
+      RETURNING *
+    `;
+
+    res.json({
+      message: "Item quantity reduced",
+      updatedItem: updated[0],
+    });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };

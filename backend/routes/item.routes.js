@@ -11,6 +11,6 @@ const router = express.Router();
 router.post("/", addItem);
 router.get("/search", searchItem);
 router.put("/:id", updateItem);
-router.delete("/:id", removeItem);
+router.delete("/remove", removeItem);
 
 export default router;

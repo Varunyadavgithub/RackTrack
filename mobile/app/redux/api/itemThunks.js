@@ -43,14 +43,15 @@ export const updateItem = createAsyncThunk(
 );
 
 // Delete Item
-export const deletetem = createAsyncThunk(
+export const deleteItem = createAsyncThunk(
   "items/delete",
-  async (id, thunkAPI) => {
+  async (data, thunkAPI) => {
     try {
-      await apiClient(`/item/${id}`, {
+      const response = await apiClient("/item/remove", {
         method: "DELETE",
+        body: JSON.stringify(data),
       });
-      return id;
+      return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
     }

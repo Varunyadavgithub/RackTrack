@@ -39,8 +39,16 @@ const itemSlice = createSlice({
         if (index !== -1) state.list[index] = action.payload;
       })
 
-      .addCase(deleteItem.fulfilled, (state, action) => {
-        state.list = state.list.filter((item) => item.id !== action.payload);
+      .addCase(deleteItem.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteItem.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(deleteItem.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
