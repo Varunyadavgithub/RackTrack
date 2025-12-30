@@ -5,9 +5,9 @@ import PrimaryButton from "@/components/ui/PrimaryButton";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import AppHeader from "../../components/ui/AppHeader";
-import { searchItem } from "../redux/api/itemThunks.js";
+import { searchItem } from "../../redux/api/itemThunks.js";
 
-const Index = () => {
+const SearchItems = () => {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.items);
 
@@ -144,4 +144,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default SearchItems;

@@ -10,12 +10,14 @@ import {
   PURGE,
   REGISTER,
 } from "redux-persist";
-import storage from "redux-persist/lib/storage";
+
+// ✅ Use AsyncStorage for React Native
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const persistConfig = {
   key: "root",
   version: 1,
-  storage,
+  storage: AsyncStorage, // <-- FIXED HERE
 };
 
 const rootReducer = combineReducers({

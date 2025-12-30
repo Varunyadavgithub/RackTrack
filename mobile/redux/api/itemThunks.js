@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { apiClient } from "./apiClient.js";
+import apiClient from "./apiClient.js";
 
 // Add Item
 export const addItem = createAsyncThunk("item/add", async (data, thunkAPI) => {

@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { apiClient } from "./apiClient.js";
+import apiClient from "./apiClient.js";
 
 // Get all racks
 export const fetchRacks = createAsyncThunk(

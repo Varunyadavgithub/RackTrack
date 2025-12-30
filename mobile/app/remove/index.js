@@ -5,9 +5,9 @@ import { useDispatch, useSelector } from "react-redux";
 import InputField from "@/components/ui/InputField";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import AppHeader from "../../components/ui/AppHeader";
-import { deleteItem } from "../redux/api/itemThunks.js";
+import { deleteItem } from "../../redux/api/itemThunks.js";
 
-const index = () => {
+const RemoveItem = () => {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.items);
 
@@ -91,4 +91,4 @@ const index = () => {
   );
 };
 
-export default index;
+export default RemoveItem;

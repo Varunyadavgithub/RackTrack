@@ -1,6 +1,6 @@
 const BASE_URL = "http://10.100.95.54:5000/api/v1";
 
-export const apiClient = async (endpoint, options = {}) => {
+const apiClient = async (endpoint, options = {}) => {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
@@ -13,3 +13,5 @@ export const apiClient = async (endpoint, options = {}) => {
 
   return response.json();
 };
+
+export default apiClient;

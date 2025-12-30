@@ -9,7 +9,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS } from "@/constants/colors.js";
 import AppHeader from "../../components/ui/AppHeader";
-import { fetchRacks } from "../redux/api/rackThunks.js";
+import { fetchRacks } from "../../redux/api/rackThunks.js";
 
 /* ===============================
    SAFE NUMBER CONVERTER
@@ -19,7 +19,7 @@ const toNumber = (value) => {
   return isNaN(num) ? 0 : num;
 };
 
-const Index = () => {
+const RackOverview = () => {
   const dispatch = useDispatch();
   const { list: racks, loading, error } = useSelector((state) => state.racks);
 
@@ -275,4 +275,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default RackOverview;
