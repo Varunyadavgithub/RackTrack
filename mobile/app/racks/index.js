@@ -11,12 +11,20 @@ import { COLORS } from "@/constants/colors.js";
 import AppHeader from "../../components/ui/AppHeader";
 import { fetchRacks } from "../redux/api/rackThunks.js";
 
+/* ===============================
+   SAFE NUMBER CONVERTER
+================================ */
+const toNumber = (value) => {
+  const num = Number(value);
+  return isNaN(num) ? 0 : num;
+};
+
 const Index = () => {
   const dispatch = useDispatch();
   const { list: racks, loading, error } = useSelector((state) => state.racks);
 
   const [expandedRack, setExpandedRack] = useState(null);
-  const [expandedShelf, setExpandedShelf] = useState(null); // <-- Track expanded shelf
+  const [expandedShelf, setExpandedShelf] = useState(null);
   const [selectedLine, setSelectedLine] = useState("All");
 
   useEffect(() => {
@@ -30,7 +38,7 @@ const Index = () => {
 
   const toggleRack = (rackId) => {
     setExpandedRack((prev) => (prev === rackId ? null : rackId));
-    setExpandedShelf(null); // collapse any open shelf when rack changes
+    setExpandedShelf(null);
   };
 
   const toggleShelf = (shelfId) => {
@@ -61,6 +69,7 @@ const Index = () => {
   return (
     <View style={{ flex: 1, padding: 16 }}>
       <AppHeader title="Back to Home" />
+
       <Text
         style={{
           fontSize: 22,
@@ -73,7 +82,7 @@ const Index = () => {
         Rack Overview
       </Text>
 
-      {/* Line Filters */}
+      {/* ================= LINE FILTERS ================= */}
       <View
         style={{
           flexDirection: "row",
@@ -86,12 +95,7 @@ const Index = () => {
           <Pressable
             key={line}
             onPress={() => setSelectedLine(line)}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              padding: 6,
-              marginBottom: 6,
-            }}
+            style={{ flexDirection: "row", alignItems: "center", padding: 6 }}
           >
             <View
               style={{
@@ -121,16 +125,24 @@ const Index = () => {
         ))}
       </View>
 
-      {/* Racks */}
+      {/* ================= RACK LIST ================= */}
       <FlatList
         data={filteredRacks}
         keyExtractor={(item) => item._id}
-        ListEmptyComponent={
-          <Text style={{ textAlign: "center", color: COLORS.textLight }}>
-            No racks found
-          </Text>
-        }
         renderItem={({ item }) => {
+          /* ---------- RACK TOTAL WEIGHT ---------- */
+          const rackTotalWeight = item.shelves.reduce((rackAcc, shelf) => {
+            const shelfWeight = shelf.items.reduce((shelfAcc, it) => {
+              const qty = toNumber(it.quantity);
+              const single = toNumber(it.singleItemWeightKg);
+              const pallet = toNumber(it.woodenPalletWeightKg);
+
+              return shelfAcc + qty * single + pallet;
+            }, 0);
+
+            return rackAcc + shelfWeight;
+          }, 0);
+
           const shelfCount = item.shelves.length;
           const itemCount = item.shelves.reduce(
             (acc, shelf) => acc + shelf.items.length,
@@ -144,140 +156,117 @@ const Index = () => {
                 borderRadius: 12,
                 padding: 14,
                 marginBottom: 12,
-                elevation: 3,
               }}
             >
-              {/* Rack Header */}
-              <Pressable
-                onPress={() => toggleRack(item._id)}
-                style={{ paddingVertical: 10 }}
-              >
+              {/* ---------- RACK HEADER ---------- */}
+              <Pressable onPress={() => toggleRack(item._id)}>
                 <Text
                   style={{
                     fontSize: 18,
                     fontWeight: "700",
                     color: COLORS.primary,
-                    marginBottom: 8,
                   }}
                 >
                   {item.rackNumber}
                 </Text>
 
-                {/* Row 1: Location & Area */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginBottom: 4,
-                  }}
-                >
-                  <Text style={{ color: COLORS.textLight }}>
-                    <Text style={{ fontWeight: "600" }}>Location: </Text>
-                    {item.location}
-                  </Text>
-                  <Text style={{ color: COLORS.textLight }}>
-                    <Text style={{ fontWeight: "600" }}>Area: </Text>
-                    {item.area}
-                  </Text>
-                </View>
-
-                {/* Row 2: Shelves & Items */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginBottom: 4,
-                  }}
-                >
-                  <Text style={{ color: COLORS.textLight }}>
-                    <Text style={{ fontWeight: "600" }}>Shelves: </Text>
-                    {shelfCount}
-                  </Text>
-                  <Text style={{ color: COLORS.textLight }}>
-                    <Text style={{ fontWeight: "600" }}>Items: </Text>
-                    {itemCount}
-                  </Text>
-                </View>
-
-                {/* Row 3: Capacity */}
                 <Text style={{ color: COLORS.textLight }}>
-                  <Text style={{ fontWeight: "600" }}>Capacity: </Text>
-                  {item.capacity} kg
+                  Location: {item.location} | Area: {item.area}
+                </Text>
+
+                <Text style={{ color: COLORS.textLight }}>
+                  Shelves: {shelfCount} | Items: {itemCount}
+                </Text>
+
+                <Text style={{ color: COLORS.textLight }}>
+                  Capacity: {item.capacity} kg
+                </Text>
+
+                <Text style={{ color: COLORS.textLight }}>
+                  Current Load: {rackTotalWeight.toFixed(2)} kg
                 </Text>
               </Pressable>
 
-              {/* Shelves */}
+              {/* ---------- SHELVES ---------- */}
               {expandedRack === item._id &&
-                item.shelves.map((shelf) => (
-                  <View
-                    key={shelf._id}
-                    style={{
-                      padding: 10,
-                      borderRadius: 8,
-                      marginBottom: 10,
-                      backgroundColor: COLORS.background,
-                      borderWidth: 1,
-                      borderColor: COLORS.border,
-                    }}
-                  >
-                    {/* Shelf Header */}
-                    <Pressable
-                      onPress={() => toggleShelf(shelf._id)}
+                item.shelves.map((shelf) => {
+                  const shelfTotalWeight = shelf.items.reduce((total, it) => {
+                    const qty = toNumber(it.quantity);
+                    const single = toNumber(it.singleItemWeightKg);
+                    const pallet = toNumber(it.woodenPalletWeightKg);
+
+                    return total + qty * single + pallet;
+                  }, 0);
+
+                  return (
+                    <View
+                      key={shelf._id}
                       style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
+                        marginTop: 10,
+                        padding: 10,
+                        backgroundColor: COLORS.background,
+                        borderRadius: 8,
+                        borderWidth: 1,
+                        borderColor: COLORS.border,
                       }}
                     >
-                      <Text style={{ fontWeight: "600", color: COLORS.text }}>
-                        Shelf {shelf.shelfNumber}
-                      </Text>
-                      <Text style={{ color: COLORS.textLight }}>
-                        Total Items: {shelf.items.length}
-                      </Text>
-                    </Pressable>
+                      {/* ---------- SHELF HEADER ---------- */}
+                      <Pressable
+                        onPress={() => toggleShelf(shelf._id)}
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Text style={{ fontWeight: "600" }}>
+                          Shelf {shelf.shelfNumber}
+                        </Text>
+                        <Text style={{ color: COLORS.textLight }}>
+                          Total Items: {shelf.items.length}
+                        </Text>
+                        <Text style={{ color: COLORS.textLight }}>
+                          Total Weight: {shelfTotalWeight.toFixed(2)} kg
+                        </Text>
+                      </Pressable>
 
-                    {/* Items */}
-                    {expandedShelf === shelf._id &&
-                      shelf.items.map((item) => (
-                        <View
-                          key={item._id}
-                          style={{
-                            padding: 8,
-                            marginTop: 6,
-                            borderRadius: 6,
-                            backgroundColor: COLORS.card,
-                          }}
-                        >
-                          <Text
-                            style={{ fontWeight: "600", color: COLORS.text }}
-                          >
-                            {item.itemName}
-                          </Text>
-                          <Text style={{ color: COLORS.textLight }}>
-                            SAP Code: {item.sapCode}
-                          </Text>
-                          <Text style={{ color: COLORS.textLight }}>
-                            Quantity: {item.quantity}
-                          </Text>
-                          {item.description && (
-                            <Text style={{ color: COLORS.textLight }}>
-                              {item.description}
-                            </Text>
-                          )}
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: COLORS.textLight,
-                              marginTop: 2,
-                            }}
-                          >
-                            Last Updated:{" "}
-                            {new Date(item.lastUpdated).toLocaleString()}
-                          </Text>
-                        </View>
-                      ))}
-                  </View>
-                ))}
+                      {/* ---------- ITEMS ---------- */}
+                      {expandedShelf === shelf._id &&
+                        shelf.items.map((it) => {
+                          const itemTotalWeight =
+                            toNumber(it.quantity) *
+                              toNumber(it.singleItemWeightKg) +
+                            toNumber(it.woodenPalletWeightKg);
+
+                          return (
+                            <View
+                              key={it._id}
+                              style={{
+                                marginTop: 8,
+                                padding: 8,
+                                backgroundColor: COLORS.card,
+                                borderRadius: 6,
+                              }}
+                            >
+                              <Text style={{ fontWeight: "600" }}>
+                                {it.itemName}
+                              </Text>
+                              <Text>SAP Code: {it.sapCode}</Text>
+                              <Text>Quantity: {it.quantity}</Text>
+                              <Text>
+                                Single Weight: {it.singleItemWeightKg} kg
+                              </Text>
+                              <Text>
+                                Pallet Weight: {it.woodenPalletWeightKg} kg
+                              </Text>
+                              <Text style={{ fontWeight: "600" }}>
+                                Total Weight: {itemTotalWeight.toFixed(2)} kg
+                              </Text>
+                            </View>
+                          );
+                        })}
+                    </View>
+                  );
+                })}
             </View>
           );
         }}

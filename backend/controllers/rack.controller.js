@@ -63,6 +63,8 @@ export const getAllRacks = async (req, res) => {
         i.item_name,
         i.description,
         i.quantity,
+        i.single_item_weight_kg,
+        i.wooden_pallet_weight_kg,
         i.last_updated
       FROM racks r
       LEFT JOIN shelves s ON s.rack_id = r.rack_id
@@ -107,6 +109,8 @@ export const getAllRacks = async (req, res) => {
             itemName: row.item_name,
             description: row.description,
             quantity: row.quantity,
+            singleItemWeightKg: row.single_item_weight_kg,
+            woodenPalletWeightKg: row.wooden_pallet_weight_kg,
             rackId: row.rack_id,
             shelfId: row.shelf_id,
             lastUpdated: row.last_updated,
