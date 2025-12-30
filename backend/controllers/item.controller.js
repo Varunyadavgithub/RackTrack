@@ -13,67 +13,89 @@ export const addItem = async (req, res) => {
       itemName,
       description,
       quantity,
+      singleItemWeightKg,
+      woodenPalletWeightKg,
     } = req.body;
 
-    /* ---- RACK ---- */
+    /* ===============================
+       SAFE NUMBER CONVERSION
+    =============================== */
+    const qty = Number(quantity) || 0;
+    const singleWeight = Number(singleItemWeightKg) || 0;
+    const palletWeight = Number(woodenPalletWeightKg) || 0;
+
+    /* ===============================
+       RACK
+    =============================== */
     const rack = (
       await sql`
-      INSERT INTO racks (rack_id, rack_number)
-      VALUES (${nanoid(8)}, ${rackNumber})
-      ON CONFLICT (rack_number)
-      DO UPDATE SET rack_number = EXCLUDED.rack_number
-      RETURNING rack_id
-    `
+        INSERT INTO racks (rack_id, rack_number)
+        VALUES (${nanoid(8)}, ${rackNumber})
+        ON CONFLICT (rack_number)
+        DO UPDATE SET rack_number = EXCLUDED.rack_number
+        RETURNING rack_id
+      `
     )[0];
 
-    /* ---- SHELF ---- */
+    /* ===============================
+       SHELF
+    =============================== */
     const shelf =
       (
         await sql`
-        INSERT INTO shelves (shelf_id, rack_id, shelf_number)
-        VALUES (${nanoid(8)}, ${rack.rack_id}, ${shelfNumber})
-        ON CONFLICT (rack_id, shelf_number) DO NOTHING
-        RETURNING shelf_id
-      `
+          INSERT INTO shelves (shelf_id, rack_id, shelf_number)
+          VALUES (${nanoid(8)}, ${rack.rack_id}, ${shelfNumber})
+          ON CONFLICT (rack_id, shelf_number)
+          DO NOTHING
+          RETURNING shelf_id
+        `
       )[0] ||
       (
         await sql`
-        SELECT shelf_id
-        FROM shelves
-        WHERE rack_id = ${rack.rack_id}
-          AND shelf_number = ${shelfNumber}
-      `
+          SELECT shelf_id
+          FROM shelves
+          WHERE rack_id = ${rack.rack_id}
+            AND shelf_number = ${shelfNumber}
+        `
       )[0];
 
-    /* ---- ITEM ---- */
+    /* ===============================
+       ITEM
+    =============================== */
     const item = (
       await sql`
-      INSERT INTO items (
-        item_id,
-        sap_code,
-        item_name,
-        description,
-        quantity,
-        rack_id,
-        shelf_id,
-        last_updated
-      )
-      VALUES (
-        ${nanoid(8)},
-        ${sapCode},
-        ${itemName},
-        ${description || ""},
-        ${quantity},
-        ${rack.rack_id},
-        ${shelf.shelf_id},
-        NOW()
-      )
-      ON CONFLICT (sap_code, rack_id, shelf_id)
-      DO UPDATE SET
-        quantity = items.quantity + EXCLUDED.quantity,
-        last_updated = NOW()
-      RETURNING *
-    `
+        INSERT INTO items (
+          item_id,
+          sap_code,
+          item_name,
+          description,
+          quantity,
+          single_item_weight_kg,
+          wooden_pallet_weight_kg,
+          rack_id,
+          shelf_id,
+          last_updated
+        )
+        VALUES (
+          ${nanoid(8)},
+          ${sapCode},
+          ${itemName},
+          ${description || ""},
+          ${qty},
+          ${singleWeight},
+          ${palletWeight},
+          ${rack.rack_id},
+          ${shelf.shelf_id},
+          NOW()
+        )
+        ON CONFLICT (sap_code, rack_id, shelf_id)
+        DO UPDATE SET
+          quantity = items.quantity + EXCLUDED.quantity,
+          single_item_weight_kg = EXCLUDED.single_item_weight_kg,
+          wooden_pallet_weight_kg = EXCLUDED.wooden_pallet_weight_kg,
+          last_updated = NOW()
+        RETURNING *
+      `
     )[0];
 
     res.status(201).json(item);

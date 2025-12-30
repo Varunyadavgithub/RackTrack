@@ -17,9 +17,22 @@ const Index = () => {
   const [itemName, setItemName] = useState("");
   const [description, setDescription] = useState("");
   const [qty, setQty] = useState("");
+  const [singleWeight, setSingleWeight] = useState("");
+  const [palletWeight, setPalletWeight] = useState("");
 
+  /* ===============================
+     SAVE HANDLER
+  =============================== */
   const handleSave = async () => {
-    if (!rack || !shelf || !sapCode || !itemName || !qty) {
+    if (
+      !rack ||
+      !shelf ||
+      !sapCode ||
+      !itemName ||
+      !qty ||
+      !singleWeight ||
+      !palletWeight
+    ) {
       Alert.alert("Validation Error", "Please fill in all required fields.");
       return;
     }
@@ -27,22 +40,27 @@ const Index = () => {
     const newItem = {
       rackNumber: rack,
       shelfNumber: shelf,
-      sapCode: sapCode,
-      itemName: itemName,
-      description: description,
-      quantity: Number(qty),
+      sapCode,
+      itemName,
+      description,
+      quantity: Number(qty) || 0,
+      singleItemWeightKg: Number(singleWeight) || 0,
+      woodenPalletWeightKg: Number(palletWeight) || 0,
     };
 
     try {
-      const response = await dispatch(addItem(newItem)).unwrap();
+      await dispatch(addItem(newItem)).unwrap();
       Alert.alert("Success", "Item added successfully!");
-      // Clear inputs after saving
+
+      /* ---- CLEAR FORM ---- */
       setRack("");
       setShelf("");
       setSapCode("");
       setItemName("");
       setDescription("");
       setQty("");
+      setSingleWeight("");
+      setPalletWeight("");
     } catch (err) {
       console.log("Add item error:", err);
       Alert.alert("Error", err || "Failed to add item.");
@@ -70,30 +88,50 @@ const Index = () => {
         value={rack}
         onChangeText={setRack}
       />
+
       <InputField
         placeholder="Shelf Number"
         value={shelf}
         onChangeText={setShelf}
       />
+
       <InputField
         placeholder="SAP Code"
         value={sapCode}
         onChangeText={setSapCode}
       />
+
       <InputField
         placeholder="Item Name"
         value={itemName}
         onChangeText={setItemName}
       />
+
       <InputField
         placeholder="Description"
         value={description}
         onChangeText={setDescription}
       />
+
       <InputField
         placeholder="Quantity"
         value={qty}
         onChangeText={setQty}
+        keyboardType="numeric"
+      />
+
+      {/* ===== NEW FIELDS ===== */}
+      <InputField
+        placeholder="Single Item Weight (kg)"
+        value={singleWeight}
+        onChangeText={setSingleWeight}
+        keyboardType="numeric"
+      />
+
+      <InputField
+        placeholder="Wooden Pallet Weight (kg)"
+        value={palletWeight}
+        onChangeText={setPalletWeight}
         keyboardType="numeric"
       />
 
