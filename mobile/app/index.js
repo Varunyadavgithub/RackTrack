@@ -25,16 +25,16 @@ export default function Index() {
       <View style={styles.actions}>
         <PrimaryButton
           title="Search Item"
-          onPress={() => router.push("/search")}
+          onPress={() => router.push("/searchItem")}
         />
-        <PrimaryButton title="Add Items" onPress={() => router.push("/add")} />
+        <PrimaryButton title="Add Items" onPress={() => router.push("/addItem")} />
         <PrimaryButton
           title="Remove Items"
-          onPress={() => router.push("/remove")}
+          onPress={() => router.push("/removeItem")}
         />
         <PrimaryButton
           title="Rack Overview"
-          onPress={() => router.push("/racks")}
+          onPress={() => router.push("/rackOverview")}
         />
       </View>
     </View>

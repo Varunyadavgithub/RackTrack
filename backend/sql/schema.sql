@@ -1,58 +1,58 @@
--- =========================
--- RACKS TABLE
--- =========================
-CREATE TABLE racks (
-    rack_id VARCHAR(10) PRIMARY KEY,
-    rack_number VARCHAR(20) NOT NULL,
+-- =========================================
+-- Rack Management Database Schema
+-- Compatible with PostgreSQL / Neon
+-- =========================================
+
+-- =========================================
+-- Table: racks
+-- =========================================
+CREATE TABLE IF NOT EXISTS racks (
+    id SERIAL PRIMARY KEY,
+    sr_no SERIAL NOT NULL, -- auto-increment serial number
+    rack_number VARCHAR(50) NOT NULL,
     location VARCHAR(100),
-    area VARCHAR(100),
-    capacity_kg INTEGER CHECK (capacity_kg >= 0),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    area VARCHAR(50),
+    capacity INT,
+    no_of_shelves INT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- =========================
--- SHELVES TABLE
--- =========================
-CREATE TABLE shelves (
-    shelf_id VARCHAR(10) PRIMARY KEY,
-    rack_id VARCHAR(10) NOT NULL,
-    shelf_number VARCHAR(10) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_shelf_rack
-        FOREIGN KEY (rack_id)
-        REFERENCES racks (rack_id)
-        ON DELETE CASCADE
+-- =========================================
+-- Table: shelves
+-- =========================================
+CREATE TABLE IF NOT EXISTS shelves (
+    id SERIAL PRIMARY KEY,
+    sr_no SERIAL NOT NULL, -- auto-increment serial number
+    shelf_number VARCHAR(50) NOT NULL,
+    rack_id INT NOT NULL REFERENCES racks(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- =========================
--- ITEMS TABLE
--- =========================
-CREATE TABLE items (
-    item_id VARCHAR(10) PRIMARY KEY,
-    sap_code VARCHAR(30) NOT NULL,
-    item_name VARCHAR(150) NOT NULL,
+-- =========================================
+-- Table: materials
+-- =========================================
+CREATE TABLE IF NOT EXISTS materials (
+    id SERIAL PRIMARY KEY,
+    sr_no SERIAL NOT NULL, -- auto-increment serial number
+    sap_code VARCHAR(50) NOT NULL,
+    name VARCHAR(50),
     description TEXT,
-    quantity INTEGER NOT NULL CHECK (quantity >= 0),
-    rack_id VARCHAR(10) NOT NULL,
-    shelf_id VARCHAR(10) NOT NULL,
-    last_updated TIMESTAMP NOT NULL,
-
-    CONSTRAINT fk_item_rack
-        FOREIGN KEY (rack_id)
-        REFERENCES racks (rack_id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_item_shelf
-        FOREIGN KEY (shelf_id)
-        REFERENCES shelves (shelf_id)
-        ON DELETE CASCADE
+    weight DECIMAL(10,2),
+    type VARCHAR(50),
+    pallet_weight DECIMAL(10,2),
+    shelf_id INT NOT NULL REFERENCES shelves(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- =========================
--- INDEXES (Performance)
--- =========================
-CREATE INDEX idx_shelves_rack_id ON shelves (rack_id);
-CREATE INDEX idx_items_rack_id ON items (rack_id);
-CREATE INDEX idx_items_shelf_id ON items (shelf_id);
-CREATE INDEX idx_items_sap_code ON items (sap_code);
+-- =========================================
+-- Optional: Indexes for faster queries
+-- =========================================
+CREATE INDEX IF NOT EXISTS idx_shelves_rack_id ON shelves(rack_id);
+CREATE INDEX IF NOT EXISTS idx_materials_shelf_id ON materials(shelf_id);
+
+-- =========================================
+-- End of SQL File
+-- =========================================

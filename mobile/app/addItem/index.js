@@ -1,76 +1,75 @@
-import { View, Text, Alert, ActivityIndicator } from "react-native";
-import { COLORS } from "@/constants/colors.js";
+import { View, Text, Pressable } from "react-native";
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import InputField from "@/components/ui/InputField";
+import { useRouter } from "expo-router";
+import { COLORS } from "@/constants/colors.js";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import AppHeader from "../../components/ui/AppHeader";
-import { addItem } from "../../redux/api/itemThunks.js";
 
 const AddItem = () => {
-  const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.items);
+  const router = useRouter();
+  const lines = ["All", "Freezer Line", "SUS Line", "Choc. Line"];
+  const [selectedLine, setSelectedLine] = useState("All");
 
-  const [rack, setRack] = useState("");
-  const [shelf, setShelf] = useState("");
-  const [sapCode, setSapCode] = useState("");
-  const [itemName, setItemName] = useState("");
-  const [description, setDescription] = useState("");
-  const [qty, setQty] = useState("");
-  const [singleWeight, setSingleWeight] = useState("");
-  const [palletWeight, setPalletWeight] = useState("");
+  const racks = [
+    { name: "rack01", line: "Freezer Line" },
+    { name: "rack02", line: "SUS Line" },
+    { name: "rack03", line: "Choc. Line" },
+    { name: "rack04", line: "Freezer Line" },
+  ];
 
-  /* ===============================
-     SAVE HANDLER
-  =============================== */
-  const handleSave = async () => {
-    if (
-      !rack ||
-      !shelf ||
-      !sapCode ||
-      !itemName ||
-      !qty ||
-      !singleWeight ||
-      !palletWeight
-    ) {
-      Alert.alert("Validation Error", "Please fill in all required fields.");
-      return;
-    }
-
-    const newItem = {
-      rackNumber: rack,
-      shelfNumber: shelf,
-      sapCode,
-      itemName,
-      description,
-      quantity: Number(qty) || 0,
-      singleItemWeightKg: Number(singleWeight) || 0,
-      woodenPalletWeightKg: Number(palletWeight) || 0,
-    };
-
-    try {
-      await dispatch(addItem(newItem)).unwrap();
-      Alert.alert("Success", "Item added successfully!");
-
-      /* ---- CLEAR FORM ---- */
-      setRack("");
-      setShelf("");
-      setSapCode("");
-      setItemName("");
-      setDescription("");
-      setQty("");
-      setSingleWeight("");
-      setPalletWeight("");
-    } catch (err) {
-      console.log("Add item error:", err);
-      Alert.alert("Error", err || "Failed to add item.");
-    }
-  };
+  const filteredRacks =
+    selectedLine === "All"
+      ? racks
+      : racks.filter((rack) => rack.line === selectedLine);
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
       <AppHeader title="Back to Home" />
 
+      {/* Line Selector */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-around",
+          marginBottom: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        {lines.map((line) => (
+          <Pressable
+            key={line}
+            onPress={() => setSelectedLine(line)}
+            style={{ flexDirection: "row", alignItems: "center", padding: 6 }}
+          >
+            <View
+              style={{
+                height: 20,
+                width: 20,
+                borderRadius: 10,
+                borderWidth: 2,
+                borderColor: COLORS.primary,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 6,
+              }}
+            >
+              {selectedLine === line && (
+                <View
+                  style={{
+                    height: 10,
+                    width: 10,
+                    borderRadius: 5,
+                    backgroundColor: COLORS.primary,
+                  }}
+                />
+              )}
+            </View>
+            <Text style={{ color: COLORS.text }}>{line}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Racks */}
       <Text
         style={{
           fontSize: 20,
@@ -80,72 +79,16 @@ const AddItem = () => {
           marginVertical: 10,
         }}
       >
-        Add New Item
+        {selectedLine === "All" ? "All Racks" : `${selectedLine} Racks`}
       </Text>
 
-      <InputField
-        placeholder="Rack Number"
-        value={rack}
-        onChangeText={setRack}
-      />
-
-      <InputField
-        placeholder="Shelf Number"
-        value={shelf}
-        onChangeText={setShelf}
-      />
-
-      <InputField
-        placeholder="SAP Code"
-        value={sapCode}
-        onChangeText={setSapCode}
-      />
-
-      <InputField
-        placeholder="Item Name"
-        value={itemName}
-        onChangeText={setItemName}
-      />
-
-      <InputField
-        placeholder="Description"
-        value={description}
-        onChangeText={setDescription}
-      />
-
-      <InputField
-        placeholder="Quantity"
-        value={qty}
-        onChangeText={setQty}
-        keyboardType="numeric"
-      />
-
-      {/* ===== NEW FIELDS ===== */}
-      <InputField
-        placeholder="Single Item Weight (kg)"
-        value={singleWeight}
-        onChangeText={setSingleWeight}
-        keyboardType="numeric"
-      />
-
-      <InputField
-        placeholder="Wooden Pallet Weight (kg)"
-        value={palletWeight}
-        onChangeText={setPalletWeight}
-        keyboardType="numeric"
-      />
-
-      {loading ? (
-        <ActivityIndicator
-          size="large"
-          color={COLORS.primary}
-          style={{ marginTop: 20 }}
+      {filteredRacks.map((rack) => (
+        <PrimaryButton
+          key={rack.name}
+          title={rack.name.toUpperCase()}
+          onPress={() => router.push(`/addItem/${rack.name}`)}
         />
-      ) : (
-        <PrimaryButton title="Save" onPress={handleSave} />
-      )}
-
-      {error && <Text style={{ color: "red", marginTop: 10 }}>{error}</Text>}
+      ))}
     </View>
   );
 };
