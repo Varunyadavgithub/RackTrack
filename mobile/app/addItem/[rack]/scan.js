@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, Button } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useEffect, useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { CameraView, CameraFacing, useCameraPermissions } from "expo-camera";
+import { CameraView, useCameraPermissions } from "expo-camera";
 
 export default function ScanShelf() {
   const router = useRouter();
@@ -9,62 +9,59 @@ export default function ScanShelf() {
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const [barcodeData, setBarcodeData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Ask for camera permission
+  // Ask permission
   useEffect(() => {
-    if (!permission) {
-      requestPermission();
-    }
+    if (!permission) requestPermission();
   }, [permission]);
 
-  // Handle barcode scan
-  const handleBarcodeScanned = ({ data, type }) => {
+  const handleBarcodeScanned = async ({ data }) => {
     setScanned(true);
-    setBarcodeData(data);
+    setLoading(true);
 
-    alert(
-      `✅ Barcode Scanned\n\nRack: ${rack}\nShelf: ${shelf}\nCode: ${data}`
-    );
+    try {
+      // 🔗 FETCH MATERIAL BY SAP CODE
+      const res = await fetch(`http://10.100.95.54:5000/api/v1/material/sap/${data}`);
+      const material = await res.json();
+
+      if (!material) {
+        alert("Material not found");
+        setScanned(false);
+        return;
+      }
+
+      // 👉 Navigate to Add Item Form with fetched data
+      router.push({
+        pathname: "/addItem/addFromScan",
+        params: {
+          rack,
+          shelf,
+          sapCode: data,
+          material: JSON.stringify(material),
+        },
+      });
+    } catch (err) {
+      alert("Failed to fetch material");
+      setScanned(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Permission loading
-  if (!permission) {
-    return (
-      <View style={styles.center}>
-        <Text>Requesting camera permission...</Text>
-      </View>
-    );
-  }
-
-  // Permission denied
-  if (!permission.granted) {
-    return (
-      <View style={styles.center}>
-        <Text>No access to camera</Text>
-        <Button title="Allow Camera" onPress={requestPermission} />
-      </View>
-    );
-  }
+  if (!permission) return <Text>Requesting camera permission...</Text>;
+  if (!permission.granted) return <Text>No camera access</Text>;
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Camera Scanner */}
       <CameraView
         style={StyleSheet.absoluteFillObject}
         onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
       />
 
-      {/* Bottom Actions */}
-      {scanned && (
-        <View style={styles.actions}>
-          <Text style={styles.resultText}>Scanned: {barcodeData}</Text>
-
-          <Button title="Scan Again" onPress={() => setScanned(false)} />
-          <Button
-            title="Back to Racks"
-            onPress={() => router.replace("/addItem")}
-          />
+      {loading && (
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#fff" />
         </View>
       )}
     </View>
@@ -72,26 +69,10 @@ export default function ScanShelf() {
 }
 
 const styles = StyleSheet.create({
-  center: {
-    flex: 1,
+  loader: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-  },
-  actions: {
-    position: "absolute",
-    bottom: 30,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    gap: 10,
-  },
-  resultText: {
-    color: "#fff",
-    fontSize: 16,
-    marginBottom: 8,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
 });
