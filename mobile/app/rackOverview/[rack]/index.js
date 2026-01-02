@@ -1,56 +1,62 @@
-import { View, Text, ScrollView, Pressable } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { COLORS } from "@/constants/colors";
 import AppHeader from "@/components/ui/AppHeader";
 
 const ShelvesScreen = () => {
-  const { rackName } = useLocalSearchParams();
+  const router = useRouter(); // ✅ router for navigation
+  const { rack } = useLocalSearchParams();
 
-  // 🔹 Mock shelf items
-  const mockShelfItems = {
-    A1: [
-      {
-        id: 1,
-        material_name: "SS430 HL",
-        sap_code: "1103390",
-        quantity: 10,
-        material_weight: 0.01,
-        material_description: "Sensor holder plate",
-      },
-      {
-        id: 2,
-        material_name: "MS Plate",
-        sap_code: "1103391",
-        quantity: 5,
-        material_weight: 0.5,
-        material_description: "Mounting plate",
-      },
-    ],
-    A2: [
-      {
-        id: 3,
-        material_name: "Aluminium Sheet",
-        sap_code: "1103400",
-        quantity: 20,
-        material_weight: 0.2,
-        material_description: "Aluminium sheet raw",
-      },
-    ],
-    A3: [
-      {
-        id: 4,
-        material_name: "Copper Wire",
-        sap_code: "1103500",
-        quantity: 50,
-        material_weight: 0.05,
-        material_description: "Copper wiring roll",
-      },
-    ],
-  };
-
-  const shelves = Object.keys(mockShelfItems);
+  const [shelves, setShelves] = useState([]);
+  const [shelfItems, setShelfItems] = useState({});
   const [expandedShelf, setExpandedShelf] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!rack) return;
+
+    const fetchItems = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const query = `rackNumber=${rack}`;
+        const response = await fetch(
+          `http://10.100.95.54:5000/api/v1/rack-items/search?${query}`
+        );
+        const data = await response.json();
+
+        if (!response.ok || !Array.isArray(data) || data.length === 0) {
+          setError("No items found for this rack.");
+          return;
+        }
+
+        const uniqueShelves = [...new Set(data.map((item) => item.shelf_name))];
+        setShelves(uniqueShelves);
+
+        const grouped = {};
+        uniqueShelves.forEach((shelf) => {
+          grouped[shelf] = data.filter((item) => item.shelf_name === shelf);
+        });
+        setShelfItems(grouped);
+      } catch (err) {
+        setError("Failed to fetch shelf items.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, [rack]);
 
   const toggleShelf = (shelfName) => {
     setExpandedShelf((prev) => (prev === shelfName ? null : shelfName));
@@ -102,7 +108,8 @@ const ShelvesScreen = () => {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
-      <AppHeader title="Back to Racks" />
+      {/* Pass onPress for back button */}
+      <AppHeader title="Back to Racks" onPress={() => router.back()} />
 
       <Text
         style={{
@@ -113,12 +120,25 @@ const ShelvesScreen = () => {
           color: COLORS.text,
         }}
       >
-        Shelves – {rackName?.toUpperCase()}
+        Shelves – {rack?.toUpperCase()}
       </Text>
+
+      {loading && (
+        <ActivityIndicator
+          size="large"
+          color={COLORS.primary}
+          style={{ marginTop: 20 }}
+        />
+      )}
+      {error ? (
+        <Text style={{ color: "red", textAlign: "center", marginTop: 10 }}>
+          {error}
+        </Text>
+      ) : null}
 
       {shelves.map((shelfName) => {
         const isExpanded = expandedShelf === shelfName;
-        const items = mockShelfItems[shelfName];
+        const items = shelfItems[shelfName] || [];
         const totalShelfWeight = items.reduce(
           (sum, item) =>
             sum + (item.quantity || 0) * (item.material_weight || 0),

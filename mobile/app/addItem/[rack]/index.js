@@ -94,14 +94,16 @@ const RackGrid = () => {
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
-      <AppHeader title="Back to Racks" />
+      <AppHeader title="Back to Racks" onPress={() => router.back()} />
 
       <Text style={styles.title}>{rack?.toUpperCase()} Shelves</Text>
 
       {loading && <ActivityIndicator size="large" color={COLORS.primary} />}
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {!loading && !error && <View style={{ marginTop: 20 }}>{renderRows(allRows)}</View>}
+      {!loading && !error && (
+        <View style={{ marginTop: 20 }}>{renderRows(allRows)}</View>
+      )}
     </View>
   );
 };
