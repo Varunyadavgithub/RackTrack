@@ -1,5 +1,5 @@
-import { View, Text, Pressable } from "react-native";
-import { useState } from "react";
+import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { COLORS } from "@/constants/colors.js";
 import PrimaryButton from "@/components/ui/PrimaryButton";
@@ -9,18 +9,35 @@ const AddItem = () => {
   const router = useRouter();
   const lines = ["All", "Freezer Line", "SUS Line", "Choc. Line"];
   const [selectedLine, setSelectedLine] = useState("All");
+  const [racks, setRacks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const racks = [
-    { name: "rack01", line: "Freezer Line" },
-    { name: "rack02", line: "SUS Line" },
-    { name: "rack03", line: "Choc. Line" },
-    { name: "rack04", line: "Freezer Line" },
-  ];
+  useEffect(() => {
+    const fetchRacks = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch("http://10.100.95.54:5000/api/v1/racks");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch racks");
+        }
+
+        const data = await response.json();
+        setRacks(data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRacks();
+  }, []);
 
   const filteredRacks =
     selectedLine === "All"
       ? racks
-      : racks.filter((rack) => rack.line === selectedLine);
+      : racks.filter((rack) => rack.location === selectedLine);
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
@@ -69,24 +86,33 @@ const AddItem = () => {
         ))}
       </View>
 
+      {loading && <ActivityIndicator size="large" color={COLORS.primary} />}
+      {error && (
+        <Text style={{ color: "red", textAlign: "center" }}>{error}</Text>
+      )}
+
       {/* Racks */}
-      <Text
-        style={{
-          fontSize: 20,
-          fontWeight: "bold",
-          color: COLORS.text,
-          textAlign: "center",
-          marginVertical: 10,
-        }}
-      >
-        {selectedLine === "All" ? "All Racks" : `${selectedLine} Racks`}
-      </Text>
+      {!loading && !error && (
+        <>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "bold",
+              color: COLORS.text,
+              textAlign: "center",
+              marginVertical: 10,
+            }}
+          >
+            {selectedLine === "All" ? "All Racks" : `${selectedLine} Racks`}
+          </Text>
+        </>
+      )}
 
       {filteredRacks.map((rack) => (
         <PrimaryButton
-          key={rack.name}
-          title={rack.name.toUpperCase()}
-          onPress={() => router.push(`/addItem/${rack.name}`)}
+          key={rack.id}
+          title={rack.rack_name.toUpperCase()}
+          onPress={() => router.push(`/addItem/${rack.rack_name}`)}
         />
       ))}
     </View>

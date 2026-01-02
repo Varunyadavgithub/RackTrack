@@ -1,58 +1,50 @@
--- =========================================
--- Rack Management Database Schema
--- Compatible with PostgreSQL / Neon
--- =========================================
-
--- =========================================
--- Table: racks
--- =========================================
-CREATE TABLE IF NOT EXISTS racks (
-    id SERIAL PRIMARY KEY,
-    sr_no SERIAL NOT NULL, -- auto-increment serial number
-    rack_number VARCHAR(50) NOT NULL,
-    location VARCHAR(100),
-    area VARCHAR(50),
-    capacity INT,
-    no_of_shelves INT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- =========================================
--- Table: shelves
--- =========================================
-CREATE TABLE IF NOT EXISTS shelves (
-    id SERIAL PRIMARY KEY,
-    sr_no SERIAL NOT NULL, -- auto-increment serial number
-    shelf_number VARCHAR(50) NOT NULL,
-    rack_id INT NOT NULL REFERENCES racks(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- =========================================
--- Table: materials
--- =========================================
+-- Materials (already created)
 CREATE TABLE IF NOT EXISTS materials (
-    id SERIAL PRIMARY KEY,
-    sr_no SERIAL NOT NULL, -- auto-increment serial number
-    sap_code VARCHAR(50) NOT NULL,
-    name VARCHAR(50),
-    description TEXT,
-    weight DECIMAL(10,2),
-    type VARCHAR(50),
-    pallet_weight DECIMAL(10,2),
-    shelf_id INT NOT NULL REFERENCES shelves(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sr_no INTEGER,
+    sap_code TEXT UNIQUE,
+    material_name TEXT,
+    material_description TEXT,
+    material_weight REAL,
+    material_type TEXT
 );
 
--- =========================================
--- Optional: Indexes for faster queries
--- =========================================
-CREATE INDEX IF NOT EXISTS idx_shelves_rack_id ON shelves(rack_id);
-CREATE INDEX IF NOT EXISTS idx_materials_shelf_id ON materials(shelf_id);
+-- Racks
+CREATE TABLE IF NOT EXISTS racks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    rack_name TEXT NOT NULL,
+    description TEXT
+);
 
--- =========================================
--- End of SQL File
--- =========================================
+-- Shelves
+CREATE TABLE IF NOT EXISTS shelves (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    rack_id INTEGER NOT NULL,
+    shelf_name TEXT NOT NULL,
+    description TEXT,
+    FOREIGN KEY(rack_id) REFERENCES racks(id)
+);
+
+-- Rack Items / Inventory
+CREATE TABLE IF NOT EXISTS rack_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    material_id INTEGER NOT NULL,
+    rack_id INTEGER NOT NULL,
+    shelf_id INTEGER NOT NULL,
+    quantity REAL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(material_id) REFERENCES materials(id),
+    FOREIGN KEY(rack_id) REFERENCES racks(id),
+    FOREIGN KEY(shelf_id) REFERENCES shelves(id)
+);
+
+-- Optional: Transaction History
+CREATE TABLE IF NOT EXISTS inventory_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    rack_item_id INTEGER NOT NULL,
+    type TEXT NOT NULL,       -- "IN" or "OUT"
+    quantity REAL NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(rack_item_id) REFERENCES rack_items(id)
+);

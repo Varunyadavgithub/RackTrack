@@ -1,8 +1,15 @@
 import express from "express";
-import { getMaterialBySapCode } from "../controllers/material.controller.js";
+import {
+  getAllMaterials,
+  getMaterialById,
+} from "../controllers/material.controller.js";
 
 const router = express.Router();
 
-router.get("/sap/:sapCode", getMaterialBySapCode);
+// Get all materials
+router.get("/", getAllMaterials);
+
+// Get single material by ID
+router.get("/:id", getMaterialById);
 
 export default router;

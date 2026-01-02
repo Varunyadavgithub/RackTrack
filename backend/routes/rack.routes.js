@@ -1,18 +1,15 @@
 import express from "express";
 import {
-  createRack,
   getAllRacks,
-  getRackById,
-  updateRack,
-  deleteRack,
+  getShelvesByRack,
 } from "../controllers/rack.controller.js";
 
 const router = express.Router();
 
-router.post("/", createRack);
+// Get all racks
 router.get("/", getAllRacks);
-router.get("/:id", getRackById);
-router.put("/:id", updateRack);
-router.delete("/:id", deleteRack);
+
+// Get shelves of a specific rack
+router.get("/:rackId/shelves", getShelvesByRack);
 
 export default router;

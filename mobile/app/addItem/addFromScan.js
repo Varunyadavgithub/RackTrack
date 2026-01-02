@@ -31,8 +31,8 @@ export default function AddFromScan() {
     }
 
     const payload = {
-      rack,
-      shelf,
+      rackId: rack,
+      shelfId: shelf,
       sap_code: sapCode,
       material_name: parsedMaterial.material_name,
       material_description: parsedMaterial.material_description,
@@ -43,16 +43,33 @@ export default function AddFromScan() {
     };
 
     try {
-      await fetch("https://YOUR_API_URL/rack-items", {
+      const response = await fetch("http://10.100.95.54:5000/api/v1/item", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      alert("Item saved successfully");
+      // First check content type
+      const contentType = response.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.log("Response not JSON:", text);
+        throw new Error(
+          "Server did not return JSON. Check backend URL or server status."
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to save item");
+      }
+
+      alert(`Item saved successfully: ${data.item_name}`);
       router.replace("/addItem");
     } catch (err) {
-      alert("Failed to save item");
+      alert(err.message);
     }
   };
 

@@ -1,12 +1,14 @@
 import express from "express";
-import rackRoutes from "./rack.routes.js";
-import itemRoutes from "./item.routes.js";
 import materialRoutes from "./material.routes.js";
+import rackRoutes from "./rack.routes.js";
+import rackItemRoutes from "./rackItem.routes.js";
+import inventoryTransactionRoutes from "./inventoryTransaction.routes.js";
 
-const app = express();
+const router = express.Router();
 
-app.use("/rack", rackRoutes);
-app.use("/item", itemRoutes);
-app.use("/material", materialRoutes);
+router.use("/materials", materialRoutes);
+router.use("/racks", rackRoutes);
+router.use("/rack-items", rackItemRoutes);
+router.use("/inventory-transactions", inventoryTransactionRoutes);
 
-export default app;
+export default router;
