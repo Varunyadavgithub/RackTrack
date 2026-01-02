@@ -27,7 +27,10 @@ export default function Index() {
           title="Search Item"
           onPress={() => router.push("/searchItem")}
         />
-        <PrimaryButton title="Add Items" onPress={() => router.push("/addItem")} />
+        <PrimaryButton
+          title="Add Items"
+          onPress={() => router.push("/addItem")}
+        />
         <PrimaryButton
           title="Remove Items"
           onPress={() => router.push("/removeItem")}
@@ -50,8 +53,6 @@ const styles = StyleSheet.create({
 
   hero: {
     alignItems: "center",
-    marginTop: 50,
-    marginBottom: 30,
   },
 
   heroImage: {
@@ -75,6 +76,6 @@ const styles = StyleSheet.create({
   },
 
   actions: {
-    gap: 14,
+    gap: 5,
   },
 });
