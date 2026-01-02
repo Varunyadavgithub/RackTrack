@@ -137,19 +137,61 @@ export const updateRackItem = async (req, res) => {
 ====================== */
 export const deleteRackItem = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { rackNumber, shelfNumber, sapCode, quantity } = req.body;
 
-    const item = (
+    // Make sure required fields are present
+    if (!rackNumber || !shelfNumber || !sapCode || !quantity) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Delete the item or reduce the quantity
+    const existingItem = (
       await sql`
-        DELETE FROM rack_items
-        WHERE id = ${id}
+        SELECT * FROM rack_items
+        WHERE rack_name = ${rackNumber}
+          AND shelf_name = ${shelfNumber}
+          AND sap_code = ${sapCode}
+      `
+    )[0];
+
+    if (!existingItem) {
+      return res.status(404).json({ message: "Rack item not found" });
+    }
+
+    // If the quantity to remove is >= current quantity, delete the row
+    if (Number(quantity) >= existingItem.quantity) {
+      const deletedItem = (
+        await sql`
+          DELETE FROM rack_items
+          WHERE rack_name = ${rackNumber}
+            AND shelf_name = ${shelfNumber}
+            AND sap_code = ${sapCode}
+          RETURNING *
+        `
+      )[0];
+
+      return res.json({
+        message: "Rack item deleted successfully",
+        item: deletedItem,
+      });
+    }
+
+    // Otherwise, reduce the quantity
+    const updatedItem = (
+      await sql`
+        UPDATE rack_items
+        SET quantity = quantity - ${Number(quantity)}
+        WHERE rack_name = ${rackNumber}
+          AND shelf_name = ${shelfNumber}
+          AND sap_code = ${sapCode}
         RETURNING *
       `
     )[0];
 
-    if (!item) return res.status(404).json({ message: "Rack item not found" });
-
-    res.json({ message: "Rack item deleted successfully", item });
+    res.json({
+      message: "Item quantity updated successfully",
+      item: updatedItem,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

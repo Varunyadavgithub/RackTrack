@@ -1,20 +1,18 @@
 import { View, Text, Alert, ActivityIndicator } from "react-native";
 import { COLORS } from "@/constants/colors.js";
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import InputField from "@/components/ui/InputField";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import AppHeader from "../../components/ui/AppHeader";
-import { deleteItem } from "../../redux/api/itemThunks.js";
 
 const RemoveItem = () => {
-  const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.items);
-
   const [rack, setRack] = useState("");
   const [shelf, setShelf] = useState("");
   const [sapCode, setSapCode] = useState("");
   const [qty, setQty] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleDelete = async () => {
     if (!rack || !shelf || !sapCode || !qty) {
@@ -29,9 +27,25 @@ const RemoveItem = () => {
       quantity: Number(qty),
     };
 
+    setLoading(true);
+    setError("");
+
     try {
-      await dispatch(deleteItem(payload)).unwrap();
-      Alert.alert("Success", "Item quantity removed successfully");
+      // Call your backend DELETE API
+      const response = await fetch("http:10.100.95.54:5000/api/v1/rack-items", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok)
+        throw new Error(data.message || "Failed to remove item");
+
+      Alert.alert("Success", data.message);
 
       // Clear form
       setRack("");
@@ -39,9 +53,12 @@ const RemoveItem = () => {
       setSapCode("");
       setQty("");
     } catch (err) {
-      Alert.alert("Error", err || "Failed to remove item");
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
     <View style={{ flex: 1, padding: 20 }}>
       <AppHeader title="Back to Home" />
@@ -56,6 +73,7 @@ const RemoveItem = () => {
       >
         Remove Items
       </Text>
+
       <InputField
         placeholder="Rack Number"
         value={rack}
@@ -77,6 +95,7 @@ const RemoveItem = () => {
         onChangeText={setQty}
         keyboardType="numeric"
       />
+
       {loading ? (
         <ActivityIndicator
           size="large"
@@ -86,7 +105,10 @@ const RemoveItem = () => {
       ) : (
         <PrimaryButton title="Remove" onPress={handleDelete} />
       )}
-      {error && <Text style={{ color: "red", marginTop: 10 }}>{error}</Text>}
+
+      {error ? (
+        <Text style={{ color: "red", marginTop: 10 }}>{error}</Text>
+      ) : null}
     </View>
   );
 };

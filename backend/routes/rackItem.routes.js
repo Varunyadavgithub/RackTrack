@@ -18,6 +18,6 @@ router.post("/", addRackItem);
 router.put("/:id", updateRackItem);
 
 // Delete a rack item by ID
-router.delete("/:id", deleteRackItem);
+router.delete("/", deleteRackItem);
 
 export default router;
