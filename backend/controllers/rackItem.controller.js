@@ -71,22 +71,42 @@ export const addRackItem = async (req, res) => {
 ====================== */
 export const getRackItems = async (req, res) => {
   try {
-    const { rackName, shelfName } = req.query;
+    const { rackNumber, shelfNumber, sapCode } = req.query;
 
+    // Base query
     let query = `
       SELECT *
       FROM rack_items
     `;
 
     const conditions = [];
-    if (rackName) conditions.push(`rack_name = '${rackName}'`);
-    if (shelfName) conditions.push(`shelf_name = '${shelfName}'`);
-    if (conditions.length > 0) query += ` WHERE ` + conditions.join(" AND ");
+    const values = [];
+
+    // Add conditions safely
+    if (rackNumber) {
+      conditions.push(`rack_name = $${values.length + 1}`);
+      values.push(rackNumber);
+    }
+    if (shelfNumber) {
+      conditions.push(`shelf_name = $${values.length + 1}`);
+      values.push(shelfNumber);
+    }
+    if (sapCode) {
+      conditions.push(`sap_code = $${values.length + 1}`);
+      values.push(sapCode);
+    }
+
+    if (conditions.length > 0) {
+      query += ` WHERE ` + conditions.join(" AND ");
+    }
+
     query += ` ORDER BY rack_name, shelf_name, material_name`;
 
-    const items = await sql.query(query);
+    const items = await sql.query(query, values);
+
     res.json(items);
   } catch (err) {
+    console.error("Error fetching rack items:", err);
     res.status(500).json({ error: err.message });
   }
 };

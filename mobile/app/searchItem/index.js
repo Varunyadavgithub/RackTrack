@@ -3,74 +3,112 @@ import { COLORS } from "@/constants/colors.js";
 import InputField from "@/components/ui/InputField";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import AppHeader from "../../components/ui/AppHeader";
-import { searchItem } from "../../redux/api/itemThunks.js";
 
 const SearchItems = () => {
-  const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.items);
-
   const [rack, setRack] = useState("");
   const [shelf, setShelf] = useState("");
   const [sapCode, setSapCode] = useState("");
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSearch = async () => {
     setResult(null);
+    setError("");
+    setLoading(true);
 
     // Build query string
     let query = "";
-    if (sapCode) query = `sap=${sapCode}`;
-    else if (rack && shelf) query = `rack=${rack}&shelf=${shelf}`;
+    if (sapCode) query = `sapCode=${sapCode}`;
+    else if (rack && shelf) query = `rackNumber=${rack}&shelfNumber=${shelf}`;
     else {
       setResult("NOT_FOUND");
+      setLoading(false);
       return;
     }
 
     try {
-      const response = await dispatch(searchItem(query)).unwrap();
-      if (!response || (Array.isArray(response) && response.length === 0)) {
+      const response = await fetch(
+        `http://10.100.95.54:5000/api/v1/rack-items/search?${query}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok || !data || data.length === 0) {
         setResult("NOT_FOUND");
       } else {
-        setResult(response);
+        setResult(data);
       }
     } catch (err) {
       console.log("Search API error:", err);
-      setResult("NOT_FOUND");
+      setError("Failed to fetch items");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Helper to render a single item
-  const renderItem = (item) => (
-    <View
-      key={item.item_id}
-      style={{
-        marginBottom: 12,
-        padding: 10,
-        borderRadius: 6,
-        backgroundColor: COLORS.card,
-      }}
-    >
-      <Text style={{ fontWeight: "600", color: COLORS.text }}>
-        {item.item_name}
-      </Text>
-      <Text style={{ color: COLORS.textLight }}>SAP Code: {item.sap_code}</Text>
-      <Text style={{ color: COLORS.textLight }}>Quantity: {item.quantity}</Text>
-      {item.description && (
-        <Text style={{ color: COLORS.textLight }}>{item.description}</Text>
-      )}
-      <Text
+  // Render a single item, showing total weight per item
+  const renderItem = (item) => {
+    const itemTotalWeight = (item.quantity || 0) * (item.material_weight || 0);
+
+    return (
+      <View
+        key={item.id}
         style={{
-          fontSize: 12,
-          color: COLORS.textLight,
-          marginTop: 2,
+          marginBottom: 12,
+          padding: 10,
+          borderRadius: 6,
+          backgroundColor: COLORS.card,
         }}
       >
-        Rack: {item.rack_number} | Shelf: {item.shelf_number}
-      </Text>
-    </View>
-  );
+        <Text style={{ fontWeight: "600", color: COLORS.text }}>
+          Material: {item.material_name}
+        </Text>
+        <Text style={{ color: COLORS.textLight }}>
+          SAP Code: {item.sap_code}
+        </Text>
+        <Text style={{ color: COLORS.textLight }}>
+          Quantity: {item.quantity}
+        </Text>
+        <Text style={{ color: COLORS.textLight }}>
+          Unit Weight: {item.material_weight}
+        </Text>
+        <Text style={{ color: COLORS.textLight }}>
+          Total Weight: {itemTotalWeight} kg
+        </Text>
+        {item.material_description && (
+          <Text style={{ color: COLORS.textLight }}>
+            Description: {item.material_description}
+          </Text>
+        )}
+        <Text
+          style={{
+            fontSize: 12,
+            color: COLORS.textLight,
+            marginTop: 2,
+          }}
+        >
+          Rack: {item.rack_name} | Shelf: {item.shelf_name}
+        </Text>
+      </View>
+    );
+  };
+
+  // Calculate total shelf weight only if rack and shelf are entered
+  const totalShelfWeight =
+    rack && shelf && Array.isArray(result)
+      ? result.reduce(
+          (sum, item) =>
+            sum + (item.quantity || 0) * (item.material_weight || 0),
+          0
+        )
+      : null;
 
   return (
     <ScrollView style={{ flex: 1, padding: 20 }}>
@@ -87,13 +125,9 @@ const SearchItems = () => {
         Search Items
       </Text>
 
+      <InputField placeholder="Rack Name" value={rack} onChangeText={setRack} />
       <InputField
-        placeholder="Rack Number"
-        value={rack}
-        onChangeText={setRack}
-      />
-      <InputField
-        placeholder="Shelf Number"
+        placeholder="Shelf Name"
         value={shelf}
         onChangeText={setShelf}
       />
@@ -132,14 +166,33 @@ const SearchItems = () => {
               Item not found
             </Text>
           ) : Array.isArray(result) ? (
-            result.map((item) => renderItem(item))
+            <>
+              {/* Show total shelf weight only if rack and shelf are entered */}
+              {totalShelfWeight !== null && (
+                <Text
+                  style={{
+                    fontWeight: "600",
+                    fontSize: 16,
+                    marginBottom: 10,
+                    color: COLORS.text,
+                  }}
+                >
+                  Total Shelf Weight: {totalShelfWeight} kg
+                </Text>
+              )}
+
+              {/* Render each item */}
+              {result.map((item) => renderItem(item))}
+            </>
           ) : (
             renderItem(result)
           )}
         </View>
       )}
 
-      {error && <Text style={{ color: "red", marginTop: 10 }}>{error}</Text>}
+      {error ? (
+        <Text style={{ color: "red", marginTop: 10 }}>{error}</Text>
+      ) : null}
     </ScrollView>
   );
 };
