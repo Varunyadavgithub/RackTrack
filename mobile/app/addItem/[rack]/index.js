@@ -56,17 +56,6 @@ const RackGrid = () => {
     }, {});
   }, [shelves]);
 
-  // 🔹 Split Front / Back
-  const { frontRows, backRows } = useMemo(() => {
-    const rows = Object.keys(groupedShelves).sort(); // A → Z
-    const mid = Math.ceil(rows.length / 2);
-
-    return {
-      frontRows: rows.slice(0, mid),
-      backRows: rows.slice(mid),
-    };
-  }, [groupedShelves]);
-
   // 🔹 Reusable row renderer
   const renderRows = (rows) =>
     rows.map((row) => (
@@ -101,6 +90,8 @@ const RackGrid = () => {
       </View>
     ));
 
+  const allRows = Object.keys(groupedShelves).sort(); // All rows
+
   return (
     <View style={{ flex: 1, padding: 20 }}>
       <AppHeader title="Back to Racks" />
@@ -110,17 +101,7 @@ const RackGrid = () => {
       {loading && <ActivityIndicator size="large" color={COLORS.primary} />}
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {!loading && !error && (
-        <>
-          {/* FRONT SIDE */}
-          <Text style={styles.sectionTitle}>Front Side</Text>
-          {renderRows(frontRows)}
-
-          {/* BACK SIDE */}
-          <Text style={styles.sectionTitle}>Back Side</Text>
-          {renderRows(backRows)}
-        </>
-      )}
+      {!loading && !error && <View style={{ marginTop: 20 }}>{renderRows(allRows)}</View>}
     </View>
   );
 };
@@ -132,14 +113,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     textAlign: "center",
     marginVertical: 10,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.primary,
-    marginVertical: 10,
-    textAlign: "center",
-    letterSpacing: 1,
   },
   error: {
     color: "red",
