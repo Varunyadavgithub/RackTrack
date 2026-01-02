@@ -1,65 +1,43 @@
-import {
-  View,
-  Text,
-  FlatList,
-  Pressable,
-  ActivityIndicator,
-} from "react-native";
-import { useEffect, useState, useMemo } from "react";
+import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { useState, useEffect } from "react";
+import { useRouter } from "expo-router";
 import { COLORS } from "@/constants/colors.js";
+import PrimaryButton from "@/components/ui/PrimaryButton";
 import AppHeader from "../../components/ui/AppHeader";
 
-/* ===============================
-   SAFE NUMBER CONVERTER
-================================ */
-const toNumber = (value) => {
-  const num = Number(value);
-  return isNaN(num) ? 0 : num;
-};
-
 const RackOverview = () => {
-
-
-  const [expandedRack, setExpandedRack] = useState(null);
-  const [expandedShelf, setExpandedShelf] = useState(null);
+  const router = useRouter();
+  const lines = ["All", "Freezer Line", "SUS Line", "Choc. Line"];
   const [selectedLine, setSelectedLine] = useState("All");
+  const [racks, setRacks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
+  useEffect(() => {
+    const fetchRacks = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch("http://10.100.95.54:5000/api/v1/racks");
 
+        if (!response.ok) {
+          throw new Error("Failed to fetch racks");
+        }
 
-  const lines = useMemo(() => {
-    const uniqueLocations = Array.from(new Set(racks.map((r) => r.location)));
-    return ["All", ...uniqueLocations];
-  }, [racks]);
+        const data = await response.json();
+        setRacks(data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRacks();
+  }, []);
 
-  const toggleRack = (rackId) => {
-    setExpandedRack((prev) => (prev === rackId ? null : rackId));
-    setExpandedShelf(null);
-  };
-
-  const toggleShelf = (shelfId) => {
-    setExpandedShelf((prev) => (prev === shelfId ? null : shelfId));
-  };
-
-  const filteredRacks = useMemo(() => {
-    if (selectedLine === "All") return racks;
-    return racks.filter((rack) => rack.location === selectedLine);
-  }, [racks, selectedLine]);
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ color: "red" }}>{error}</Text>
-      </View>
-    );
-  }
+  const filteredRacks =
+    selectedLine === "All"
+      ? racks
+      : racks.filter((rack) => rack.location === selectedLine);
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
@@ -77,7 +55,7 @@ const RackOverview = () => {
         Rack Overview
       </Text>
 
-      {/* ================= LINE FILTERS ================= */}
+      {/* Line Selector */}
       <View
         style={{
           flexDirection: "row",
@@ -120,152 +98,18 @@ const RackOverview = () => {
         ))}
       </View>
 
-      {/* ================= RACK LIST ================= */}
-      <FlatList
-        data={filteredRacks}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => {
-          /* ---------- RACK TOTAL WEIGHT ---------- */
-          const rackTotalWeight = item.shelves.reduce((rackAcc, shelf) => {
-            const shelfWeight = shelf.items.reduce((shelfAcc, it) => {
-              const qty = toNumber(it.quantity);
-              const single = toNumber(it.singleItemWeightKg);
-              const pallet = toNumber(it.woodenPalletWeightKg);
+      {loading && <ActivityIndicator size="large" color={COLORS.primary} />}
+      {error && (
+        <Text style={{ color: "red", textAlign: "center" }}>{error}</Text>
+      )}
 
-              return shelfAcc + qty * single + pallet;
-            }, 0);
-
-            return rackAcc + shelfWeight;
-          }, 0);
-
-          const shelfCount = item.shelves.length;
-          const itemCount = item.shelves.reduce(
-            (acc, shelf) => acc + shelf.items.length,
-            0
-          );
-
-          return (
-            <View
-              style={{
-                backgroundColor: COLORS.card,
-                borderRadius: 12,
-                padding: 14,
-                marginBottom: 12,
-              }}
-            >
-              {/* ---------- RACK HEADER ---------- */}
-              <Pressable onPress={() => toggleRack(item._id)}>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "700",
-                    color: COLORS.primary,
-                  }}
-                >
-                  {item.rackNumber}
-                </Text>
-
-                <Text style={{ color: COLORS.textLight }}>
-                  Location: {item.location} | Area: {item.area}
-                </Text>
-
-                <Text style={{ color: COLORS.textLight }}>
-                  Shelves: {shelfCount} | Items: {itemCount}
-                </Text>
-
-                <Text style={{ color: COLORS.textLight }}>
-                  Capacity: {item.capacity} kg
-                </Text>
-
-                <Text style={{ color: COLORS.textLight }}>
-                  Current Load: {rackTotalWeight.toFixed(2)} kg
-                </Text>
-              </Pressable>
-
-              {/* ---------- SHELVES ---------- */}
-              {expandedRack === item._id &&
-                item.shelves.map((shelf) => {
-                  const shelfTotalWeight = shelf.items.reduce((total, it) => {
-                    const qty = toNumber(it.quantity);
-                    const single = toNumber(it.singleItemWeightKg);
-                    const pallet = toNumber(it.woodenPalletWeightKg);
-
-                    return total + qty * single + pallet;
-                  }, 0);
-
-                  return (
-                    <View
-                      key={shelf._id}
-                      style={{
-                        marginTop: 10,
-                        padding: 10,
-                        backgroundColor: COLORS.background,
-                        borderRadius: 8,
-                        borderWidth: 1,
-                        borderColor: COLORS.border,
-                      }}
-                    >
-                      {/* ---------- SHELF HEADER ---------- */}
-                      <Pressable
-                        onPress={() => toggleShelf(shelf._id)}
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Text style={{ fontWeight: "600" }}>
-                          Shelf {shelf.shelfNumber}
-                        </Text>
-                        <Text style={{ color: COLORS.textLight }}>
-                          Total Items: {shelf.items.length}
-                        </Text>
-                        <Text style={{ color: COLORS.textLight }}>
-                          Total Weight: {shelfTotalWeight.toFixed(2)} kg
-                        </Text>
-                      </Pressable>
-
-                      {/* ---------- ITEMS ---------- */}
-                      {expandedShelf === shelf._id &&
-                        shelf.items.map((it) => {
-                          const itemTotalWeight =
-                            toNumber(it.quantity) *
-                              toNumber(it.singleItemWeightKg) +
-                            toNumber(it.woodenPalletWeightKg);
-
-                          return (
-                            <View
-                              key={it._id}
-                              style={{
-                                marginTop: 8,
-                                padding: 8,
-                                backgroundColor: COLORS.card,
-                                borderRadius: 6,
-                              }}
-                            >
-                              <Text style={{ fontWeight: "600" }}>
-                                {it.itemName}
-                              </Text>
-                              <Text>SAP Code: {it.sapCode}</Text>
-                              <Text>Quantity: {it.quantity}</Text>
-                              <Text>
-                                Single Weight: {it.singleItemWeightKg} kg
-                              </Text>
-                              <Text>
-                                Pallet Weight: {it.woodenPalletWeightKg} kg
-                              </Text>
-                              <Text style={{ fontWeight: "600" }}>
-                                Total Weight: {itemTotalWeight.toFixed(2)} kg
-                              </Text>
-                            </View>
-                          );
-                        })}
-                    </View>
-                  );
-                })}
-            </View>
-          );
-        }}
-      />
+      {filteredRacks.map((rack) => (
+        <PrimaryButton
+          key={rack.id}
+          title={rack.rack_name.toUpperCase()}
+          onPress={() => router.push(`/rackOverview/${rack.rack_name}`)}
+        />
+      ))}
     </View>
   );
 };
