@@ -31,23 +31,26 @@ export default function AddFromScan() {
     }
 
     const payload = {
-      rackId: rack,
-      shelfId: shelf,
-      sap_code: sapCode,
-      material_name: parsedMaterial.material_name,
-      material_description: parsedMaterial.material_description,
-      material_weight: parsedMaterial.material_weight,
-      material_type: parsedMaterial.material_type,
-      wooden_pallet_weight: hasPallet ? 2 : 0,
+      rackName: rack,
+      shelfName: shelf,
+      sapCode: sapCode,
+      materialName: parsedMaterial.material_name,
+      materialDescription: parsedMaterial.material_description,
+      materialWeight: parsedMaterial.material_weight,
+      materialType: parsedMaterial.material_type,
+      woodenPalletWeight: hasPallet ? 2 : 0,
       quantity: Number(quantity),
     };
 
     try {
-      const response = await fetch("http://10.100.95.54:5000/api/v1/item", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        "http://10.100.95.54:5000/api/v1/rack-items",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       // First check content type
       const contentType = response.headers.get("content-type");
@@ -66,7 +69,7 @@ export default function AddFromScan() {
         throw new Error(data.message || "Failed to save item");
       }
 
-      alert(`Item saved successfully: ${data.item_name}`);
+      alert(`Item saved successfully: ${data.material_name}`);
       router.replace("/addItem");
     } catch (err) {
       alert(err.message);

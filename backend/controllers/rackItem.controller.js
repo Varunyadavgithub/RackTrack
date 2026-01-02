@@ -5,25 +5,44 @@ import { sql } from "../config/db.js";
 ====================== */
 export const addRackItem = async (req, res) => {
   try {
-    const { materialId, rackId, shelfId, quantity } = req.body;
+    const {
+      rackName,
+      shelfName,
+      materialName,
+      materialDescription = "",
+      materialWeight = 0,
+      materialType = "",
+      sapCode = "",
+      quantity,
+      woodenPalletWeight = 0,
+    } = req.body;
 
-    if (!materialId || !rackId || !shelfId || !quantity) {
+    if (!rackName || !shelfName || !materialName || quantity === undefined) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Check if the material already exists in this rack+shelf
-    const existing = (await sql`
-      SELECT * FROM rack_items
-      WHERE material_id = ${materialId} AND rack_id = ${rackId} AND shelf_id = ${shelfId}
-    `)[0];
+    // 🔹 Check if item already exists based on rackName, shelfName, and materialName
+    const existing = (
+      await sql`
+        SELECT * FROM rack_items
+        WHERE rack_name = ${rackName} 
+          AND shelf_name = ${shelfName} 
+          AND material_name = ${materialName}
+      `
+    )[0];
 
     let rackItem;
     if (existing) {
       const newQuantity = existing.quantity + Number(quantity);
+      const newPalletWeight =
+        existing.wooden_pallet_weight + Number(woodenPalletWeight);
+
       rackItem = (
         await sql`
           UPDATE rack_items
-          SET quantity = ${newQuantity}, updated_at = CURRENT_TIMESTAMP
+          SET quantity = ${newQuantity},
+              wooden_pallet_weight = ${newPalletWeight},
+              updated_at = CURRENT_TIMESTAMP
           WHERE id = ${existing.id}
           RETURNING *
         `
@@ -31,8 +50,10 @@ export const addRackItem = async (req, res) => {
     } else {
       rackItem = (
         await sql`
-          INSERT INTO rack_items (material_id, rack_id, shelf_id, quantity)
-          VALUES (${materialId}, ${rackId}, ${shelfId}, ${quantity})
+          INSERT INTO rack_items 
+            (rack_name, shelf_name, material_name, material_description, material_weight, material_type, sap_code, quantity, wooden_pallet_weight)
+          VALUES 
+            (${rackName}, ${shelfName}, ${materialName}, ${materialDescription}, ${materialWeight}, ${materialType}, ${sapCode}, ${quantity}, ${woodenPalletWeight})
           RETURNING *
         `
       )[0];
@@ -40,6 +61,7 @@ export const addRackItem = async (req, res) => {
 
     res.status(201).json(rackItem);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -49,24 +71,18 @@ export const addRackItem = async (req, res) => {
 ====================== */
 export const getRackItems = async (req, res) => {
   try {
-    const { rackId, shelfId } = req.query;
+    const { rackName, shelfName } = req.query;
 
     let query = `
-      SELECT ri.id as rack_item_id, ri.quantity, ri.created_at, ri.updated_at,
-             m.id as material_id, m.material_name, m.material_description, m.material_weight, m.material_type,
-             r.id as rack_id, r.rack_name,
-             s.id as shelf_id, s.shelf_name
-      FROM rack_items ri
-      JOIN materials m ON ri.material_id = m.id
-      JOIN racks r ON ri.rack_id = r.id
-      JOIN shelves s ON ri.shelf_id = s.id
+      SELECT *
+      FROM rack_items
     `;
 
     const conditions = [];
-    if (rackId) conditions.push(`ri.rack_id = ${rackId}`);
-    if (shelfId) conditions.push(`ri.shelf_id = ${shelfId}`);
+    if (rackName) conditions.push(`rack_name = '${rackName}'`);
+    if (shelfName) conditions.push(`shelf_name = '${shelfName}'`);
     if (conditions.length > 0) query += ` WHERE ` + conditions.join(" AND ");
-    query += ` ORDER BY r.rack_name, s.shelf_name, m.material_name`;
+    query += ` ORDER BY rack_name, shelf_name, material_name`;
 
     const items = await sql.query(query);
     res.json(items);
@@ -81,7 +97,14 @@ export const getRackItems = async (req, res) => {
 export const updateRackItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quantity } = req.body;
+    const {
+      quantity,
+      woodenPalletWeight = 0,
+      materialDescription,
+      materialWeight,
+      materialType,
+      sapCode,
+    } = req.body;
 
     if (quantity === undefined)
       return res.status(400).json({ message: "Quantity is required" });
@@ -89,7 +112,13 @@ export const updateRackItem = async (req, res) => {
     const item = (
       await sql`
         UPDATE rack_items
-        SET quantity = ${quantity}, updated_at = CURRENT_TIMESTAMP
+        SET quantity = ${quantity},
+            wooden_pallet_weight = ${woodenPalletWeight},
+            material_description = ${materialDescription || ""},
+            material_weight = ${materialWeight || 0},
+            material_type = ${materialType || ""},
+            sap_code = ${sapCode || ""},
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = ${id}
         RETURNING *
       `
