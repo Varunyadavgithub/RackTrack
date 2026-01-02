@@ -17,9 +17,10 @@ export const getAllRacks = async (req, res) => {
 ====================== */
 export const getShelvesByRack = async (req, res) => {
   try {
-    const { rackId } = req.params;
+    const { rackName } = req.params;
+
     const shelves = await sql`
-      SELECT * FROM shelves WHERE rack_id = ${rackId}
+      SELECT * FROM shelves WHERE rack_name = ${rackName}
     `;
     res.json(shelves);
   } catch (err) {

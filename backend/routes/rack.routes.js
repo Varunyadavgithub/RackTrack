@@ -10,6 +10,6 @@ const router = express.Router();
 router.get("/", getAllRacks);
 
 // Get shelves of a specific rack
-router.get("/:rackId/shelves", getShelvesByRack);
+router.get("/:rackName/shelves", getShelvesByRack);
 
 export default router;
