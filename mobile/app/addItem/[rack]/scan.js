@@ -22,7 +22,7 @@ export default function ScanShelf() {
 
     try {
       // 🔗 FETCH MATERIAL BY SAP CODE
-      const res = await fetch(`http://10.100.95.54:5000/api/v1/material/sap/${data}`);
+      const res = await fetch(`http://10.100.95.54:5000/api/v1/materials/${data}`);
       const material = await res.json();
 
       if (!material) {

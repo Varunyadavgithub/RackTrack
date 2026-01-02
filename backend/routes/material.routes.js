@@ -1,7 +1,7 @@
 import express from "express";
 import {
   getAllMaterials,
-  getMaterialById,
+  getMaterialBySapCode,
 } from "../controllers/material.controller.js";
 
 const router = express.Router();
@@ -9,7 +9,7 @@ const router = express.Router();
 // Get all materials
 router.get("/", getAllMaterials);
 
-// Get single material by ID
-router.get("/:id", getMaterialById);
+// Get single material by SAP Code
+router.get("/:sapCode", getMaterialBySapCode);
 
 export default router;
