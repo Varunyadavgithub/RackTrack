@@ -1,19 +1,7 @@
 import { sql } from "../config/db.js";
 
 /* ======================
-   GET ALL MATERIALS
-====================== */
-export const getAllMaterials = async (req, res) => {
-  try {
-    const materials = await sql`SELECT * FROM materials`;
-    res.json(materials);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-/* ======================
-   GET MATERIAL BY ID
+   GET MATERIAL BY SAP CODE
 ====================== */
 export const getMaterialBySapCode = async (req, res) => {
   try {

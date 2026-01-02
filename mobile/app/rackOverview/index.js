@@ -6,10 +6,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useEffect, useState, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { COLORS } from "@/constants/colors.js";
 import AppHeader from "../../components/ui/AppHeader";
-import { fetchRacks } from "../../redux/api/rackThunks.js";
 
 /* ===============================
    SAFE NUMBER CONVERTER
@@ -20,16 +18,13 @@ const toNumber = (value) => {
 };
 
 const RackOverview = () => {
-  const dispatch = useDispatch();
-  const { list: racks, loading, error } = useSelector((state) => state.racks);
+
 
   const [expandedRack, setExpandedRack] = useState(null);
   const [expandedShelf, setExpandedShelf] = useState(null);
   const [selectedLine, setSelectedLine] = useState("All");
 
-  useEffect(() => {
-    dispatch(fetchRacks());
-  }, [dispatch]);
+
 
   const lines = useMemo(() => {
     const uniqueLocations = Array.from(new Set(racks.map((r) => r.location)));
