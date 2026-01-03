@@ -31,9 +31,9 @@ export default function ScanShelf() {
         return;
       }
 
-      // 👉 Navigate to Add Item Form with fetched data
+      // 👉 Navigate to Add Material Form with fetched data
       router.push({
-        pathname: "/addItem/addFromScan",
+        pathname: "/addMaterial/addFromScan",
         params: {
           rack,
           shelf,

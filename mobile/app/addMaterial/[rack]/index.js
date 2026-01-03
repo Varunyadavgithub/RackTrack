@@ -79,7 +79,7 @@ const RackGrid = () => {
               style={styles.box}
               onPress={() =>
                 router.push({
-                  pathname: `/addItem/${rack}/scan`,
+                  pathname: `/addMaterial/${rack}/scan`,
                   params: { shelf: item.shelf_name },
                 })
               }

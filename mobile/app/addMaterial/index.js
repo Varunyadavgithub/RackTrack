@@ -5,7 +5,7 @@ import { COLORS } from "@/constants/colors.js";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import AppHeader from "../../components/ui/AppHeader";
 
-const AddItem = () => {
+const AddMaterial = () => {
   const router = useRouter();
   const lines = ["All", "Freezer Line", "SUS Line", "Choc. Line"];
   const [selectedLine, setSelectedLine] = useState("All");
@@ -112,11 +112,11 @@ const AddItem = () => {
         <PrimaryButton
           key={rack.id}
           title={rack.rack_name.toUpperCase()}
-          onPress={() => router.push(`/addItem/${rack.rack_name}`)}
+          onPress={() => router.push(`/addMaterial/${rack.rack_name}`)}
         />
       ))}
     </View>
   );
 };
 
-export default AddItem;
+export default AddMaterial;

@@ -5,7 +5,7 @@ import InputField from "@/components/ui/InputField";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import AppHeader from "../../components/ui/AppHeader";
 
-const RemoveItem = () => {
+const RemoveMaterial = () => {
   const [rack, setRack] = useState("");
   const [shelf, setShelf] = useState("");
   const [sapCode, setSapCode] = useState("");
@@ -32,7 +32,7 @@ const RemoveItem = () => {
 
     try {
       // Call your backend DELETE API
-      const response = await fetch("http:10.100.95.54:5000/api/v1/rack-items", {
+      const response = await fetch("http://10.100.95.54:5000/api/v1/rack-items", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -43,7 +43,7 @@ const RemoveItem = () => {
       const data = await response.json();
 
       if (!response.ok)
-        throw new Error(data.message || "Failed to remove item");
+        throw new Error(data.message || "Failed to remove material");
 
       Alert.alert("Success", data.message);
 
@@ -71,7 +71,7 @@ const RemoveItem = () => {
           marginVertical: 10,
         }}
       >
-        Remove Items
+        Remove Material from Rack
       </Text>
 
       <InputField
@@ -113,4 +113,4 @@ const RemoveItem = () => {
   );
 };
 
-export default RemoveItem;
+export default RemoveMaterial;

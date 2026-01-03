@@ -26,7 +26,7 @@ export default function AddFromScan() {
     }
 
     if (hasPallet === null) {
-      alert("Please choose whether this item has a wooden pallet");
+      alert("Please choose whether this material has a wooden pallet");
       return;
     }
 
@@ -66,11 +66,11 @@ export default function AddFromScan() {
       }
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to save item");
+        throw new Error(data.message || "Failed to save material");
       }
 
-      alert(`Item saved successfully: ${data.material_name}`);
-      router.replace("/addItem");
+      alert(`Material saved successfully: ${data.material_name}`);
+      router.replace("/addMaterial");
     } catch (err) {
       alert(err.message);
     }
@@ -78,7 +78,7 @@ export default function AddFromScan() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Add Item to Rack</Text>
+      <Text style={styles.title}>Add Material to Rack</Text>
 
       {/* Rack & Shelf Info */}
       <View style={styles.card}>
@@ -113,7 +113,7 @@ export default function AddFromScan() {
 
       {/* Wooden Pallet Yes/No */}
       <View style={styles.palletRow}>
-        <Text style={styles.label}>Does this item have a wooden pallet?</Text>
+        <Text style={styles.label}>Does this Material have a wooden pallet?</Text>
         <View style={styles.buttonsRow}>
           <TouchableOpacity
             style={[styles.button, hasPallet === true && styles.buttonSelected]}
@@ -148,7 +148,7 @@ export default function AddFromScan() {
         </View>
       </View>
 
-      <PrimaryButton title="Save Item" onPress={handleSave} />
+      <PrimaryButton title="Save Material" onPress={handleSave} />
     </ScrollView>
   );
 }

@@ -5,7 +5,7 @@ import PrimaryButton from "@/components/ui/PrimaryButton";
 import { useState } from "react";
 import AppHeader from "../../components/ui/AppHeader";
 
-const SearchItems = () => {
+const SearchMaterial = () => {
   const [rack, setRack] = useState("");
   const [shelf, setShelf] = useState("");
   const [sapCode, setSapCode] = useState("");
@@ -47,14 +47,14 @@ const SearchItems = () => {
       }
     } catch (err) {
       console.log("Search API error:", err);
-      setError("Failed to fetch items");
+      setError("Failed to fetch materials");
     } finally {
       setLoading(false);
     }
   };
 
-  // Render a single item, showing total weight per item
-  const renderItem = (item) => {
+  // Render a single material, showing total weight per material
+  const renderMaterial = (item) => {
     const itemTotalWeight = (item.quantity || 0) * (item.material_weight || 0);
 
     return (
@@ -122,7 +122,7 @@ const SearchItems = () => {
           color: COLORS.text,
         }}
       >
-        Search Items
+        Search Material
       </Text>
 
       <InputField placeholder="Rack Name" value={rack} onChangeText={setRack} />
@@ -163,7 +163,7 @@ const SearchItems = () => {
         >
           {result === "NOT_FOUND" ? (
             <Text style={{ color: "red", textAlign: "center" }}>
-              Item not found
+              Material not found
             </Text>
           ) : Array.isArray(result) ? (
             <>
@@ -181,11 +181,11 @@ const SearchItems = () => {
                 </Text>
               )}
 
-              {/* Render each item */}
-              {result.map((item) => renderItem(item))}
+              {/* Render each material */}
+              {result.map((item) => renderMaterial(item))}
             </>
           ) : (
-            renderItem(result)
+            renderMaterial(result)
           )}
         </View>
       )}
@@ -197,4 +197,4 @@ const SearchItems = () => {
   );
 };
 
-export default SearchItems;
+export default SearchMaterial;

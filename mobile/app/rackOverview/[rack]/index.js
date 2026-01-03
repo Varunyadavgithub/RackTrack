@@ -15,7 +15,7 @@ const ShelvesScreen = () => {
   const { rack } = useLocalSearchParams();
 
   const [shelves, setShelves] = useState([]);
-  const [shelfItems, setShelfItems] = useState({});
+  const [shelfMaterials, setShelfMaterials] = useState({});
   const [expandedShelf, setExpandedShelf] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -23,7 +23,7 @@ const ShelvesScreen = () => {
   useEffect(() => {
     if (!rack) return;
 
-    const fetchItems = async () => {
+    const fetchMaterials = async () => {
       setLoading(true);
       setError("");
 
@@ -35,7 +35,7 @@ const ShelvesScreen = () => {
         const data = await response.json();
 
         if (!response.ok || !Array.isArray(data) || data.length === 0) {
-          setError("No items found for this rack.");
+          setError("No materials found for this rack.");
           return;
         }
 
@@ -46,23 +46,23 @@ const ShelvesScreen = () => {
         uniqueShelves.forEach((shelf) => {
           grouped[shelf] = data.filter((item) => item.shelf_name === shelf);
         });
-        setShelfItems(grouped);
+        setShelfMaterials(grouped);
       } catch (err) {
-        setError("Failed to fetch shelf items.");
+        setError("Failed to fetch shelf materials.");
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchItems();
+    fetchMaterials();
   }, [rack]);
 
   const toggleShelf = (shelfName) => {
     setExpandedShelf((prev) => (prev === shelfName ? null : shelfName));
   };
 
-  const renderItem = (item) => {
+  const renderMaterial = (item) => {
     const totalWeight = (item.quantity || 0) * (item.material_weight || 0);
 
     return (
@@ -138,7 +138,7 @@ const ShelvesScreen = () => {
 
       {shelves.map((shelfName) => {
         const isExpanded = expandedShelf === shelfName;
-        const items = shelfItems[shelfName] || [];
+        const items = shelfMaterials[shelfName] || [];
         const totalShelfWeight = items.reduce(
           (sum, item) =>
             sum + (item.quantity || 0) * (item.material_weight || 0),
@@ -195,10 +195,10 @@ const ShelvesScreen = () => {
               </View>
             )}
 
-            {/* Shelf Items */}
+            {/* Shelf Materials */}
             {isExpanded && (
               <View style={{ padding: 16 }}>
-                {items.map((item) => renderItem(item))}
+                {items.map((item) => renderMaterial(item))}
               </View>
             )}
           </View>
