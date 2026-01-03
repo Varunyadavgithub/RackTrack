@@ -104,11 +104,49 @@ const RackOverview = () => {
       )}
 
       {filteredRacks.map((rack) => (
-        <PrimaryButton
+        <Pressable
           key={rack.id}
-          title={rack.rack_name.toUpperCase()}
-          onPress={() => router.push(`/rackOverview/${rack.rack_name}`)}
-        />
+          onPress={() =>
+            router.push({
+              pathname: `/rackOverview/${rack.rack_name}`,
+              params: { capacity: rack.capacity_kg },
+            })
+          }
+          style={{
+            backgroundColor: COLORS.card,
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 12,
+            borderWidth: 1,
+            borderColor: COLORS.border,
+            shadowColor: COLORS.shadow,
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 3,
+          }}
+        >
+          {/* Rack Name */}
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              color: COLORS.text,
+              marginBottom: 6,
+            }}
+          >
+            {rack.rack_name.toUpperCase()}
+          </Text>
+
+          {/* Location */}
+          <Text style={{ color: COLORS.textLight, marginBottom: 4 }}>
+            Line: {rack.location}
+          </Text>
+
+          {/* Capacity */}
+          <Text style={{ color: COLORS.textLight, marginBottom: 4 }}>
+            Capacity: {rack.capacity_kg} kg
+          </Text>
+        </Pressable>
       ))}
     </View>
   );

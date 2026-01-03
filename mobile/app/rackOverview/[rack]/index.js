@@ -9,10 +9,11 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { COLORS } from "@/constants/colors";
 import AppHeader from "@/components/ui/AppHeader";
+import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 
 const ShelvesScreen = () => {
-  const router = useRouter(); // ✅ router for navigation
-  const { rack } = useLocalSearchParams();
+  const router = useRouter();
+  const { rack, capacity } = useLocalSearchParams();
 
   const [shelves, setShelves] = useState([]);
   const [shelfMaterials, setShelfMaterials] = useState({});
@@ -28,10 +29,10 @@ const ShelvesScreen = () => {
       setError("");
 
       try {
-        const query = `rackNumber=${rack}`;
         const response = await fetch(
-          `http://10.100.95.54:5000/api/v1/rack-items/search?${query}`
+          `http://10.100.95.54:5000/api/v1/rack-items/search?rackNumber=${rack}`
         );
+
         const data = await response.json();
 
         if (!response.ok || !Array.isArray(data) || data.length === 0) {
@@ -46,10 +47,11 @@ const ShelvesScreen = () => {
         uniqueShelves.forEach((shelf) => {
           grouped[shelf] = data.filter((item) => item.shelf_name === shelf);
         });
+
         setShelfMaterials(grouped);
       } catch (err) {
-        setError("Failed to fetch shelf materials.");
         console.error(err);
+        setError("Failed to fetch shelf materials.");
       } finally {
         setLoading(false);
       }
@@ -62,6 +64,18 @@ const ShelvesScreen = () => {
     setExpandedShelf((prev) => (prev === shelfName ? null : shelfName));
   };
 
+  /* ✅ Calculate Rack Total Weight */
+  const rackTotalWeight = Object.values(shelfMaterials).reduce(
+    (rackSum, items) =>
+      rackSum +
+      items.reduce(
+        (shelfSum, item) =>
+          shelfSum + (item.quantity || 0) * (item.material_weight || 0),
+        0
+      ),
+    0
+  );
+
   const renderMaterial = (item) => {
     const totalWeight = (item.quantity || 0) * (item.material_weight || 0);
 
@@ -72,12 +86,9 @@ const ShelvesScreen = () => {
           marginBottom: 12,
           padding: 12,
           borderRadius: 8,
-          backgroundColor: "#ffffff",
-          shadowColor: "#000",
-          shadowOpacity: 0.05,
-          shadowOffset: { width: 0, height: 1 },
-          shadowRadius: 3,
-          elevation: 2,
+          backgroundColor: COLORS.card,
+          borderWidth: 1,
+          borderColor: COLORS.border,
         }}
       >
         <Text style={{ fontWeight: "700", color: COLORS.text, fontSize: 16 }}>
@@ -88,9 +99,10 @@ const ShelvesScreen = () => {
         <Text style={{ color: COLORS.textLight }}>
           Unit Weight: {item.material_weight} kg
         </Text>
-        <Text style={{ color: COLORS.textLight, fontWeight: "600" }}>
-          Total: {totalWeight} kg
+        <Text style={{ fontWeight: "600", color: COLORS.text }}>
+          Total: {totalWeight.toFixed(2)} kg
         </Text>
+
         {item.material_description && (
           <Text
             style={{
@@ -107,10 +119,10 @@ const ShelvesScreen = () => {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
-      {/* Pass onPress for back button */}
+    <ScrollView style={{ flex: 1, backgroundColor: COLORS.background }}>
       <AppHeader title="Back to Racks" onPress={() => router.back()} />
 
+      {/* Rack Title */}
       <Text
         style={{
           fontSize: 22,
@@ -120,8 +132,85 @@ const ShelvesScreen = () => {
           color: COLORS.text,
         }}
       >
-        Shelves – {rack?.toUpperCase()}
+        Shelves in Rack{" "}
+        <Text style={{ color: COLORS.primary }}>{rack.toUpperCase()}</Text>
       </Text>
+
+      {/* ✅ Rack Weight Summary */}
+      <View
+        style={{
+          marginHorizontal: 16,
+          marginBottom: 16,
+          padding: 16,
+          borderRadius: 12,
+          backgroundColor: COLORS.card,
+          borderWidth: 1,
+          borderColor: COLORS.border,
+        }}
+      >
+        <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.text }}>
+          Rack Load Summary
+        </Text>
+
+        {/* Capacity Info */}
+        {capacity && (
+          <>
+            <Text style={{ color: COLORS.textLight, marginTop: 4 }}>
+              Capacity: {capacity} kg
+            </Text>
+
+            {/* Current Weight */}
+            <Text
+              style={{
+                fontSize: 22,
+                fontWeight: "bold",
+                color: COLORS.primary,
+                marginTop: 6,
+              }}
+            >
+              Current Load: {rackTotalWeight.toFixed(2)} kg
+            </Text>
+
+            <Text
+              style={{
+                marginTop: 4,
+                fontWeight: "600",
+                color:
+                  rackTotalWeight / capacity >= 0.9
+                    ? COLORS.expense
+                    : COLORS.income,
+              }}
+            >
+              Used: {((rackTotalWeight / capacity) * 100).toFixed(1)}%
+            </Text>
+
+            {/* Capacity Bar */}
+            <View
+              style={{
+                height: 8,
+                backgroundColor: COLORS.border,
+                borderRadius: 4,
+                marginTop: 8,
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  height: "100%",
+                  width: `${Math.min(
+                    (rackTotalWeight / capacity) * 100,
+                    100
+                  )}%`,
+                  backgroundColor:
+                    rackTotalWeight / capacity >= 0.9
+                      ? COLORS.expense
+                      : COLORS.primary,
+                }}
+              />
+            </View>
+          </>
+        )}
+      </View>
 
       {loading && (
         <ActivityIndicator
@@ -130,15 +219,18 @@ const ShelvesScreen = () => {
           style={{ marginTop: 20 }}
         />
       )}
+
       {error ? (
         <Text style={{ color: "red", textAlign: "center", marginTop: 10 }}>
           {error}
         </Text>
       ) : null}
 
+      {/* Shelves */}
       {shelves.map((shelfName) => {
         const isExpanded = expandedShelf === shelfName;
         const items = shelfMaterials[shelfName] || [];
+
         const totalShelfWeight = items.reduce(
           (sum, item) =>
             sum + (item.quantity || 0) * (item.material_weight || 0),
@@ -153,15 +245,11 @@ const ShelvesScreen = () => {
               marginVertical: 8,
               borderRadius: 12,
               overflow: "hidden",
-              backgroundColor: "#fff",
-              shadowColor: "#000",
-              shadowOpacity: 0.1,
-              shadowOffset: { width: 0, height: 2 },
-              shadowRadius: 6,
-              elevation: 3,
+              backgroundColor: COLORS.card,
+              borderWidth: 1,
+              borderColor: COLORS.border,
             }}
           >
-            {/* Shelf Header */}
             <Pressable
               onPress={() => toggleShelf(shelfName)}
               style={{
@@ -172,32 +260,43 @@ const ShelvesScreen = () => {
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>
-                Shelf {shelfName}
-              </Text>
-              <Text style={{ color: "#fff", fontSize: 16 }}>
-                {isExpanded ? "▲" : "▼"}
-              </Text>
-            </Pressable>
-
-            {/* Shelf Total Weight */}
-            {isExpanded && (
-              <View
-                style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  backgroundColor: "#e6f0ff",
-                }}
-              >
-                <Text style={{ fontWeight: "600", color: COLORS.text }}>
-                  Total Shelf Weight: {totalShelfWeight} kg
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <MaterialCommunityIcons
+                  name="view-grid"
+                  size={20}
+                  color={COLORS.white}
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  style={{
+                    color: COLORS.white,
+                    fontSize: 18,
+                    fontWeight: "700",
+                  }}
+                >
+                  Shelf {shelfName}
                 </Text>
               </View>
-            )}
 
-            {/* Shelf Materials */}
+              <Ionicons
+                name={isExpanded ? "chevron-up" : "chevron-down"}
+                size={22}
+                color={COLORS.white}
+              />
+            </Pressable>
+
             {isExpanded && (
               <View style={{ padding: 16 }}>
+                <Text
+                  style={{
+                    fontWeight: "600",
+                    color: COLORS.text,
+                    marginBottom: 8,
+                  }}
+                >
+                  Shelf Weight: {totalShelfWeight.toFixed(2)} kg
+                </Text>
+
                 {items.map((item) => renderMaterial(item))}
               </View>
             )}
