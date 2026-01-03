@@ -53,6 +53,7 @@ const styles = StyleSheet.create({
 
   hero: {
     alignItems: "center",
+    marginBottom:10
   },
 
   heroImage: {
