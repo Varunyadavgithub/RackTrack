@@ -1,285 +1,315 @@
-# **RackTrack API Documentation**
+# 🏭 RackTrack API Documentation
 
-**Base URL:**
+RackTrack provides RESTful APIs to manage **racks, shelves, materials, and inventory transactions** in a manufacturing or warehouse setting.
 
-```
-http://localhost:5000/api
-```
-
----
-
-## **1️⃣ Add Item**
-
-**Endpoint:**
+**Base URL (Example):**
 
 ```
-POST /items
-```
-
-**Description:**
-Add a new item to a specific rack and shelf. If the rack or shelf does not exist, it will be auto-created. If the item already exists in the same rack and shelf, its quantity will be incremented.
-
-**Request Body (JSON):**
-
-```json
-{
-  "rackNumber": "RACK-01",
-  "shelfNumber": "S1",
-  "sapCode": "SAP99999",
-  "itemName": "Test Item",
-  "description": "Test description",
-  "quantity": 50
-}
-```
-
-**Success Response (201):**
-
-```json
-{
-  "id": "uuid-of-item",
-  "sap_code": "SAP99999",
-  "item_name": "Test Item",
-  "description": "Test description",
-  "quantity": 50,
-  "rack_id": "uuid-of-rack",
-  "shelf_id": "uuid-of-shelf",
-  "last_updated": "2025-12-27T12:00:00.000Z"
-}
-```
-
-**Errors:**
-
-- `500`: Server error with error message
-
----
-
-## **2️⃣ Search Item**
-
-**Endpoint:**
-
-```
-GET /items/search
-```
-
-**Description:**
-Search items by SAP code or by rack + shelf. You can provide any combination of query parameters.
-
-**Query Parameters:**
-
-- `sap` (optional) – SAP code of the item
-- `rack` (optional) – Rack number
-- `shelf` (optional) – Shelf number
-
-**Examples:**
-
-```
-GET /items/search?sap=SAP99999
-GET /items/search?rack=RACK-01&shelf=S1
-```
-
-**Success Response (200):**
-
-- **Single item:**
-
-```json
-{
-  "id": "uuid-of-item",
-  "sap_code": "SAP99999",
-  "item_name": "Test Item",
-  "description": "Test description",
-  "quantity": 50,
-  "rack_id": "uuid-of-rack",
-  "shelf_id": "uuid-of-shelf",
-  "last_updated": "2025-12-27T12:00:00.000Z"
-}
-```
-
-- **Multiple items (array):**
-
-```json
-[
-  {
-    "id": "uuid1",
-    "sap_code": "SAP12345",
-    "item_name": "Compressor",
-    "quantity": 1200,
-    "rack_id": "uuid-rack",
-    "shelf_id": "uuid-shelf",
-    "last_updated": "2025-12-26T12:30:00Z"
-  },
-  {
-    "id": "uuid2",
-    "sap_code": "SAP12346",
-    "item_name": "Condenser Coil",
-    "quantity": 850,
-    "rack_id": "uuid-rack",
-    "shelf_id": "uuid-shelf",
-    "last_updated": "2025-12-25T09:15:00Z"
-  }
-]
-```
-
-**Error Response (404):**
-
-```json
-{
-  "message": "Item not found"
-}
+http://10.100.95.54:5000/api/v1
 ```
 
 ---
 
-## **3️⃣ Update Item Quantity**
+## 📦 Racks API
 
-**Endpoint:**
-
-```
-PUT /items/:id
-```
-
-**Description:**
-Update the quantity of a specific item.
-
-**Path Parameter:**
-
-- `id` – Item ID (UUID)
-
-**Request Body (JSON):**
-
-```json
-{
-  "quantity": 200
-}
-```
-
-**Success Response (200):**
-
-```json
-{
-  "id": "uuid-of-item",
-  "sap_code": "SAP99999",
-  "item_name": "Test Item",
-  "description": "Test description",
-  "quantity": 200,
-  "rack_id": "uuid-of-rack",
-  "shelf_id": "uuid-of-shelf",
-  "last_updated": "2025-12-27T12:10:00.000Z"
-}
-```
-
-**Errors:**
-
-- `404`: Item not found
-- `500`: Server error
-
----
-
-## **4️⃣ Remove Item**
-
-**Endpoint:**
-
-```
-DELETE /items/remove
-```
-
-**Description:**
-Remove an item by rack number, shelf number, SAP code, and quantity.
-
-**Request Body (JSON):**
-
-```json
-{
-  "rack": "RACK-01",
-  "shelf": "S1",
-  "sap": "SAP99999",
-  "quantity": 50
-}
-```
-
-**Success Response (200):**
-
-```json
-{
-  "message": "Item removed successfully",
-  "removedItem": {
-    "id": "uuid-of-item",
-    "sap_code": "SAP99999",
-    "item_name": "Test Item",
-    "quantity": 50,
-    "rack_id": "uuid-of-rack",
-    "shelf_id": "uuid-of-shelf",
-    "last_updated": "2025-12-27T12:00:00.000Z"
-  }
-}
-```
-
-**Error Response (404):**
-
-```json
-{
-  "message": "Item not found or already removed"
-}
-```
-
-**Error Response (400):**
-
-```json
-{
-  "message": "rack, shelf, sap, and quantity are required"
-}
-```
-
----
-
-## **5️⃣ Rack Overview**
-
-**Endpoint:**
+### 1. Get All Racks
 
 ```
 GET /racks
 ```
 
-**Description:**
-Get a complete overview of racks → shelves → items, formatted for the frontend.
-
-**Success Response (200):**
+**Description:** Fetch all racks in the system.
+**Response:**
 
 ```json
 [
   {
-    "_id": "uuid-rack",
-    "rackNumber": "RACK-01",
-    "location": "Frz. Line",
-    "area": "Part Process",
-    "capacity": "5000 kg",
-    "shelves": [
-      {
-        "_id": "uuid-shelf",
-        "rackId": "uuid-rack",
-        "shelfNumber": "S1",
-        "items": [
-          {
-            "_id": "uuid-item",
-            "sapCode": "SAP12345",
-            "itemName": "Compressor",
-            "description": "High-pressure refrigeration compressor",
-            "quantity": 1200,
-            "rackId": "uuid-rack",
-            "shelfId": "uuid-shelf",
-            "lastUpdated": "2025-12-26T12:30:00Z"
-          }
-        ]
-      }
-    ]
+    "id": "1",
+    "rack_name": "RACK-01",
+    "location": "Freezer Line",
+    "capacity_kg": 1000
+  },
+  ...
+]
+```
+
+---
+
+### 2. Get Shelves of a Rack
+
+```
+GET /racks/:rackName/shelves
+```
+
+**Description:** Fetch all shelves for a specific rack.
+**Params:**
+
+| Parameter | Type   | Description      |
+| --------- | ------ | ---------------- |
+| rackName  | string | Name of the rack |
+
+**Response:**
+
+```json
+[
+  "Shelf-01",
+  "Shelf-02",
+  "Shelf-03"
+]
+```
+
+---
+
+## 📦 Materials API
+
+### 1. Get Material by SAP Code
+
+```
+GET /materials/:sapCode
+```
+
+**Description:** Fetch material information using SAP code.
+**Params:**
+
+| Parameter | Type   | Description      |
+| --------- | ------ | ---------------- |
+| sapCode   | string | SAP code of item |
+
+**Response:**
+
+```json
+{
+  "id": "1",
+  "material_name": "Steel Rod",
+  "sap_code": "SAP123",
+  "material_description": "High-grade steel",
+  "material_weight": 10,
+  "quantity": 50,
+  "rack_name": "RACK-01",
+  "shelf_name": "Shelf-01"
+}
+```
+
+---
+
+## 📦 Rack Items API
+
+### 1. Search Rack Items
+
+```
+GET /rack-items/search
+```
+
+**Description:** Search items by SAP code or by rack & shelf.
+**Query Parameters:**
+
+| Parameter   | Type   | Optional | Description       |
+| ----------- | ------ | -------- | ----------------- |
+| sapCode     | string | Yes      | Material SAP code |
+| rackNumber  | string | Yes      | Rack number       |
+| shelfNumber | string | Yes      | Shelf number      |
+
+**Response:**
+
+```json
+[
+  {
+    "id": "1",
+    "material_name": "Steel Rod",
+    "sap_code": "SAP123",
+    "material_weight": 10,
+    "quantity": 50,
+    "material_description": "High-grade steel",
+    "rack_name": "RACK-01",
+    "shelf_name": "Shelf-01"
   }
 ]
 ```
 
 ---
 
-### **Notes & Tips**
+### 2. Add Rack Item
 
-- Use **UUIDs** for `:id` parameters in `PUT` and `DELETE`.
-- All `last_updated` timestamps are in **ISO format**.
-- `Add Item` auto-creates racks and shelves if missing.
-- `Remove Item` requires **exact quantity match** for deletion.
+```
+POST /rack-items
+```
+
+**Description:** Add a new material to a rack and shelf.
+**Request Body:**
+
+```json
+{
+  "rackNumber": "RACK-01",
+  "shelfNumber": "Shelf-01",
+  "sapCode": "SAP123",
+  "material_name": "Steel Rod",
+  "material_weight": 10,
+  "quantity": 50,
+  "material_description": "High-grade steel"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Material added successfully",
+  "rackItem": {
+    "id": "1",
+    "rackNumber": "RACK-01",
+    "shelfNumber": "Shelf-01",
+    "sapCode": "SAP123",
+    "quantity": 50
+  }
+}
+```
+
+---
+
+### 3. Update Rack Item
+
+```
+PUT /rack-items/:id
+```
+
+**Description:** Update quantity or details of an existing material.
+**Params:**
+
+| Parameter | Type   | Description  |
+| --------- | ------ | ------------ |
+| id        | string | Rack item ID |
+
+**Request Body:**
+
+```json
+{
+  "quantity": 60,
+  "material_description": "Updated description"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Rack item updated successfully",
+  "rackItem": {
+    "id": "1",
+    "quantity": 60,
+    "material_description": "Updated description"
+  }
+}
+```
+
+---
+
+### 4. Delete Rack Item
+
+```
+DELETE /rack-items
+```
+
+**Description:** Remove material from a rack.
+**Request Body:**
+
+```json
+{
+  "rackNumber": "RACK-01",
+  "shelfNumber": "Shelf-01",
+  "sapCode": "SAP123",
+  "quantity": 20
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Material removed successfully"
+}
+```
+
+---
+
+## 📦 Inventory Transactions API
+
+### 1. Get All Transactions
+
+```
+GET /inventory-transactions
+```
+
+**Description:** Fetch all inventory transactions (IN/OUT).
+**Response:**
+
+```json
+[
+  {
+    "id": "1",
+    "sapCode": "SAP123",
+    "rackNumber": "RACK-01",
+    "shelfNumber": "Shelf-01",
+    "quantity": 50,
+    "transactionType": "IN",
+    "timestamp": "2026-01-03T10:00:00Z"
+  }
+]
+```
+
+---
+
+### 2. Add New Transaction
+
+```
+POST /inventory-transactions
+```
+
+**Description:** Record a new inventory movement (IN/OUT).
+**Request Body:**
+
+```json
+{
+  "sapCode": "SAP123",
+  "rackNumber": "RACK-01",
+  "shelfNumber": "Shelf-01",
+  "quantity": 50,
+  "transactionType": "IN"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Inventory transaction recorded",
+  "transaction": {
+    "id": "1",
+    "sapCode": "SAP123",
+    "rackNumber": "RACK-01",
+    "shelfNumber": "Shelf-01",
+    "quantity": 50,
+    "transactionType": "IN",
+    "timestamp": "2026-01-03T10:00:00Z"
+  }
+}
+```
+
+---
+
+## ⚡ Notes
+
+* All **POST/PUT/DELETE** endpoints require **JSON body** and appropriate fields.
+* All **GET** endpoints return JSON arrays or objects.
+* Quantity is always an **integer**; material_weight is in **kg**.
+* SAP code is the **primary identifier** for materials.
+* Transactions are logged automatically for audit purposes.
+
+---
+
+✅ This API documentation now fully covers:
+
+* Rack management
+* Shelf lookup
+* Material CRUD
+* Rack load calculation (via quantities & weight)
+* Inventory transactions

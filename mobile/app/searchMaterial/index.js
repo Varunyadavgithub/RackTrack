@@ -177,7 +177,7 @@ const SearchMaterial = () => {
                     color: COLORS.text,
                   }}
                 >
-                  Total Shelf Weight: {totalShelfWeight} kg
+                  Total Shelf Weight: {totalShelfWeight.toFixed(2)} kg
                 </Text>
               )}
 

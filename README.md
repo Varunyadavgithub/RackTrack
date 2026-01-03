@@ -38,8 +38,7 @@ Before RackTrack, the inventory and rack management process faced several critic
 
 * **Serious safety risks due to overloading**
   Because rack capacity and load were not digitally monitored, **racks were overloaded beyond safe limits**.
-
-  ⚠️ **A rack collapsed twice in the company due to excessive weight**. Fortunately, **no personnel were harmed**, but these incidents clearly highlighted a **major safety and operational risk**.
+  ⚠️ **A rack collapsed twice in the company due to excessive weight**. Fortunately, **no personnel were harmed**, but these incidents highlighted **major operational and safety risks**.
 
 * **Difficult to train new staff**
   New employees struggled to understand rack layouts, item locations, and stock levels without a centralized system.
@@ -48,15 +47,15 @@ Before RackTrack, the inventory and rack management process faced several critic
 
 ## ✅ Solution: RackTrack
 
-RackTrack was designed as a **safety-driven, mobile-first inventory management system** that provides:
+RackTrack is a **mobile-first, safety-driven inventory management system** that provides:
 
 * Centralized rack and shelf tracking
 * Real-time inventory visibility
 * SAP-based item identification
-* Safer load distribution awareness
+* Rack load monitoring with capacity awareness
 * Easy-to-use interface for shop-floor workers
 
-> *RackTrack was initiated after real-world safety incidents, with the goal of preventing future accidents through better visibility, accountability, and data-driven inventory control.*
+> *RackTrack was initiated after real-world safety incidents, aiming to prevent future accidents through better visibility, accountability, and data-driven inventory control.*
 
 ---
 
@@ -64,35 +63,39 @@ RackTrack was designed as a **safety-driven, mobile-first inventory management s
 
 ### 🔍 Rack Overview
 
-* View all racks with location and area details
+* View all racks by line or area
 * Expand racks to view shelves
-* Expand shelves to view items
+* Expand shelves to view individual materials
+* Rack load summary with capacity and usage percentage
+* Color-coded load warning for near-full racks
 * Filter racks by production lines (Frz Line, SUS Line, Choc Line, etc.)
 
 ### ➕ Item Management
 
-* Add new items using:
+* Add new items via **Rack → Shelf → SAP Code Scan → Add Form**
+* Update material quantity and pallet information
+* Remove items with quantity control
+* Material search by SAP code or by rack and shelf
+* Total weight calculation per shelf and per rack
 
-  * Rack Number
-  * Shelf Number
-  * SAP Code
-  * Item Name
-  * Quantity
-  * Description
-* Update item quantity
-* Remove items when consumed or relocated
+### 📸 Barcode Scanning
+
+* Scan material SAP codes using device camera
+* Fetch material data from backend
+* Navigate directly to add material form
 
 ### 🧭 User Experience
 
 * One-tap **Back to Home** navigation
-* Clean industrial UI
-* Optimized for factory and warehouse usage
-* Minimal training required
+* Clean industrial UI, optimized for warehouse use
+* Minimal training required for new operators
+* Expandable sections for shelves and materials
 
 ### 💾 Persistent Data
 
-* Redux Persist ensures data remains available across app restarts
-* Designed to work reliably in industrial environments
+* Data is fetched from REST API endpoints
+* Offline state not yet implemented (planned)
+* Redux persist can be added for state storage
 
 ---
 
@@ -100,21 +103,17 @@ RackTrack was designed as a **safety-driven, mobile-first inventory management s
 
 ### 📱 Frontend (Mobile Application)
 
-* React Native
-* Expo
-* Expo Router
-* Redux Toolkit
-* Redux Thunk
-* Redux Persist
-* Axios
-* Vector Icons
+* React Native + Expo
+* Expo Router for screen navigation
+* Redux Toolkit + Thunks for state management
+* Axios for API requests
+* Vector Icons for UI
 
 ### 🌐 Backend
 
-* Node.js
-* Express.js
-* Serverless Neo Database
+* Node.js + Express
 * RESTful APIs
+* Serverless or traditional database for racks, shelves, and materials
 
 ---
 
@@ -124,33 +123,28 @@ RackTrack was designed as a **safety-driven, mobile-first inventory management s
 racktrack/
 │
 ├── app/
-│   ├── index.js                # Home Screen
-│   ├── racks/
-│   │   └── index.js            # Rack Overview Screen
-│   ├── add-item/
-│   │   └── index.js            # Add Item Screen
-│   └── _layout.jsx             # App Navigation Layout
+│   ├── index.js                     # Home Screen / Dashboard
+│   ├── rackOverview/
+│   │   ├── index.js                 # Rack Overview Screen
+│   │   └── [rack]/index.js          # Shelves & Material Details
+│   ├── addMaterial/
+│   │   ├── index.js                 # Select Line & Rack
+│   │   └── addFormScan.js           # Add Material Form (after scan)
+│   ├── [rack]/index.js               # Rack → Shelf Grid
+│   ├── [rack]/scan.js                # Camera Scan for SAP Code
+│   ├── removeMaterial/
+│   │   └── index.js                  # Remove Material Screen
+│   └── searchMaterial/
+│       └── index.js                  # Search Material Screen
 │
 ├── components/
-│   ├── ui/
-│   │   ├── AppHeader.jsx
-│   │   ├── InputField.jsx
-│   │   └── PrimaryButton.jsx
-│
-├── store/
-│   ├── index.js                # Redux Store
-│   ├── racks/
-│   │   ├── rackSlice.js
-│   │   └── rackThunks.js
-│   ├── items/
-│   │   ├── itemSlice.js
-│   │   └── itemThunks.js
+│   └── ui/
+│       ├── AppHeader.js
+│       ├── InputField.js
+│       └── PrimaryButton.js
 │
 ├── constants/
-│   └── colors.js               # Theme Configuration
-│
-├── utils/
-│   └── axios.js                # Axios API Instance
+│   └── colors.js                     # Theme Colors
 │
 └── README.md
 ```
@@ -161,31 +155,32 @@ racktrack/
 
 ### 📦 Rack APIs
 
-| Method | Endpoint     | Description    |
-| ------ | ------------ | -------------- |
-| POST   | `/racks`     | Create a rack  |
-| GET    | `/racks`     | Get all racks  |
-| GET    | `/racks/:id` | Get rack by ID |
-| PUT    | `/racks/:id` | Update rack    |
-| DELETE | `/racks/:id` | Delete rack    |
+| Method | Endpoint                      | Description              |
+| ------ | ----------------------------- | ------------------------ |
+| GET    | `/api/v1/racks`               | Fetch all racks          |
+| GET    | `/api/v1/racks/:rack/shelves` | Fetch shelves for a rack |
+| GET    | `/api/v1/racks/:id`           | Get rack by ID           |
+| POST   | `/api/v1/racks`               | Create a rack            |
+| PUT    | `/api/v1/racks/:id`           | Update rack info         |
+| DELETE | `/api/v1/racks/:id`           | Delete a rack            |
 
-### 📦 Item APIs
+### 📦 Material / Rack-Item APIs
 
-| Method | Endpoint        | Description  |
-| ------ | --------------- | ------------ |
-| POST   | `/items`        | Add new item |
-| GET    | `/items/search` | Search item  |
-| PUT    | `/items/:id`    | Update item  |
-| DELETE | `/items/:id`    | Delete item  |
+| Method | Endpoint                     | Description                   |
+| ------ | ---------------------------- | ----------------------------- |
+| GET    | `/api/v1/materials/:sapCode` | Fetch material by SAP code    |
+| GET    | `/api/v1/rack-items/search`  | Search by SAP or rack & shelf |
+| POST   | `/api/v1/rack-items`         | Add material to rack          |
+| DELETE | `/api/v1/rack-items`         | Remove material from rack     |
 
 ---
 
 ## 🧠 State Management
 
-* Redux Toolkit for predictable state management
-* Redux Thunk for async API calls
-* Redux Persist for local data storage
-* Automatic UI updates on state changes
+* **Redux Toolkit** – centralized, predictable state
+* **Redux Thunk** – asynchronous API actions
+* **Optional Redux Persist** – for offline persistence
+* UI updates automatically when state changes
 
 ---
 
@@ -219,10 +214,10 @@ npx expo start
 
 ## 🔮 Future Enhancements
 
-* 📷 Barcode / QR scanning for SAP codes
-* ⚠️ Rack load & capacity warnings
-* 🔄 Real-time updates using WebSockets
-* 📴 Offline-first support
+* 📷 Barcode / QR scanning for SAP codes (already implemented, refine UX)
+* ⚠️ Rack load & capacity warnings (visual indicators)
+* 🔄 Real-time updates via WebSockets
+* 📴 Offline-first support with Redux Persist
 * 🔐 Role-based access control (Admin / Operator)
 * 📊 Inventory analytics dashboard
 * 🌐 Web dashboard for supervisors
@@ -252,3 +247,11 @@ Focused on building **real-world, safety-first industrial software solutions**.
 
 This project is developed for **internal enterprise use**.
 Commercial use or redistribution requires prior permission.
+
+---
+
+I’ve **updated the README to include all current screens, navigation, barcode scanning, rack/shelf/weight calculations, and material management flows**.
+
+If you want, I can also **add a visual flow diagram showing Rack → Shelf → Scan → Add Material**, which makes the README much more readable for non-technical users.
+
+Do you want me to create that diagram too?
