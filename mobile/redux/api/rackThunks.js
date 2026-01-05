@@ -1,43 +1,26 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import apiClient from "./apiClient.js";
+import { apiClient } from "./apiClient.js";
 
-// Get all racks
+/* Fetch all racks */
 export const fetchRacks = createAsyncThunk(
-  "racks/fetchAll",
-  async (_, thunkAPI) => {
+  "racks/fetchRacks",
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await apiClient("/rack");
-      return response;
-    } catch (error) {
-      console.log("API error:", error);
-      return thunkAPI.rejectWithValue(error.message);
+      return await apiClient("/racks");
+    } catch (err) {
+      return rejectWithValue(err.message);
     }
   }
 );
 
-// Get rack by ID
-export const fetchRackById = createAsyncThunk(
-  "racks/fetchById",
-  async (id, thunkAPI) => {
+/* Fetch shelves for a rack */
+export const fetchShelves = createAsyncThunk(
+  "racks/fetchShelves",
+  async (rack, { rejectWithValue }) => {
     try {
-      return await apiClient(`/rack/${id}`);
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
-    }
-  }
-);
-
-// Create rack
-export const createRack = createAsyncThunk(
-  "racks/create",
-  async (data, thunkAPI) => {
-    try {
-      return await apiClient("/rack", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      return await apiClient(`/racks/${rack}/shelves`);
+    } catch (err) {
+      return rejectWithValue(err.message);
     }
   }
 );

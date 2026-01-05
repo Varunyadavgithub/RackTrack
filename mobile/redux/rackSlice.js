@@ -1,45 +1,47 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchRacks, fetchRackById, createRack } from "./api/rackThunks.js";
+import { fetchRacks, fetchShelves } from "./api/rackThunks.js";
 
 const rackSlice = createSlice({
   name: "racks",
   initialState: {
-    list: [],
-    selectedRack: null,
+    racks: [],
+    shelves: [],
     loading: false,
     error: null,
   },
   reducers: {
-    clearSelectedRack: (state) => {
-      state.selectedRack = null;
+    clearShelves(state) {
+      state.shelves = [];
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch all racks
       .addCase(fetchRacks.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchRacks.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        state.racks = action.payload;
       })
       .addCase(fetchRacks.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
 
-      // Fetch rack by ID
-      .addCase(fetchRackById.fulfilled, (state, action) => {
-        state.selectedRack = action.payload;
+      .addCase(fetchShelves.pending, (state) => {
+        state.loading = true;
       })
-
-      // Create rack
-      .addCase(createRack.fulfilled, (state, action) => {
-        state.list.push(action.payload);
+      .addCase(fetchShelves.fulfilled, (state, action) => {
+        state.loading = false;
+        state.shelves = action.payload;
+      })
+      .addCase(fetchShelves.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { clearSelectedRack } = rackSlice.actions;
+export const { clearShelves } = rackSlice.actions;
 export default rackSlice.reducer;

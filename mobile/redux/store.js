@@ -1,6 +1,7 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import rackReducer from "./rackSlice.js";
-import itemReducer from "./itemSlice.js";
+import itemReducer from "./materialSlice.js";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   persistReducer,
   FLUSH,
@@ -11,13 +12,11 @@ import {
   REGISTER,
 } from "redux-persist";
 
-// ✅ Use AsyncStorage for React Native
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
 const persistConfig = {
   key: "root",
   version: 1,
-  storage: AsyncStorage, // <-- FIXED HERE
+  storage: AsyncStorage,
+  whitelist: ["racks", "items"],
 };
 
 const rootReducer = combineReducers({
