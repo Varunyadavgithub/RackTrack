@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchRacks, fetchShelves } from "./api/rackThunks.js";
+import { fetchRacks, fetchShelves } from "../api/rackThunks.js";
 
 const rackSlice = createSlice({
   name: "racks",

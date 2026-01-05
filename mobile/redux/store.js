@@ -1,6 +1,6 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import rackReducer from "./rackSlice.js";
-import itemReducer from "./materialSlice.js";
+import rackReducer from "./slices/rackSlice.js";
+import itemReducer from "./slices/materialSlice.js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   persistReducer,

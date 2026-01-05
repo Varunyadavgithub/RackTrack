@@ -4,7 +4,7 @@ import {
   addMaterial,
   deleteMaterial,
   searchMaterial,
-} from "./api/materialThunks.js";
+} from "../api/materialThunks.js";
 
 const materialSlice = createSlice({
   name: "items",
