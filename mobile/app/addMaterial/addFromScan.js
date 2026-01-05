@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
@@ -18,6 +19,7 @@ export default function AddFromScan() {
 
   const [quantity, setQuantity] = useState("");
   const [hasPallet, setHasPallet] = useState(null);
+  const [loading, setLoading] = useState(false); // <-- loader state
 
   const handleSave = async () => {
     if (!quantity) {
@@ -43,6 +45,7 @@ export default function AddFromScan() {
     };
 
     try {
+      setLoading(true); // <-- show loader
       const response = await fetch(
         "http://10.100.95.54:5000/api/v1/rack-items",
         {
@@ -52,7 +55,6 @@ export default function AddFromScan() {
         }
       );
 
-      // First check content type
       const contentType = response.headers.get("content-type");
       let data;
       if (contentType && contentType.includes("application/json")) {
@@ -73,6 +75,8 @@ export default function AddFromScan() {
       router.replace("/addMaterial");
     } catch (err) {
       alert(err.message);
+    } finally {
+      setLoading(false); // <-- hide loader
     }
   };
 
@@ -113,7 +117,9 @@ export default function AddFromScan() {
 
       {/* Wooden Pallet Yes/No */}
       <View style={styles.palletRow}>
-        <Text style={styles.label}>Does this Material have a wooden pallet?</Text>
+        <Text style={styles.label}>
+          Does this Material have a wooden pallet?
+        </Text>
         <View style={styles.buttonsRow}>
           <TouchableOpacity
             style={[styles.button, hasPallet === true && styles.buttonSelected]}
@@ -148,7 +154,16 @@ export default function AddFromScan() {
         </View>
       </View>
 
-      <PrimaryButton title="Save Material" onPress={handleSave} />
+      {/* Loader or Button */}
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color={COLORS.primary}
+          style={{ marginVertical: 20 }}
+        />
+      ) : (
+        <PrimaryButton title="Save Material" onPress={handleSave} />
+      )}
     </ScrollView>
   );
 }
